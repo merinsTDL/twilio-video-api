@@ -8,11 +8,16 @@ module.exports = {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
     ],
   },
   entry: {
-    app: './src/app.js',
-    foo: './src/admin.js'
+    app: './src/app.ts',
+    foo: './src/admin.ts'
   },
   output: {
     filename: '[name].js',
