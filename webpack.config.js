@@ -15,6 +15,9 @@ module.exports = {
       },
     ],
   },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+  },
   entry: {
     app: './src/app.ts',
     foo: './src/admin.ts'
