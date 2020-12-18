@@ -5,14 +5,14 @@
 'use strict';
 
 import { Room, Logger, LocalTrack, TwilioError} from 'twilio-video';
-import { createLog, log } from './old_jsutilmodules/log.js';
-import { createCollapsibleDiv } from './old_jsutilmodules/createCollapsibleDiv.js';
-import { createDiv } from './old_jsutilmodules/createDiv.js';
-import { createLocalTracksControls } from './old_es6/createLocalTracksControls.js';
-import { createRoomControls } from './old_es6/createRoomControls.js';
+import { createLog, log } from './components/log';
+import { createCollapsibleDiv } from './components/createCollapsibleDiv';
+import { createDiv } from './components/createDiv';
+import { createLocalTracksControls } from './createLocalTracksControls';
+import { createRoomControls } from './createRoomControls';
 import { renderRoom } from './old_es6/renderRoom.js';
 
-export function demo(Video: typeof import("twilio-video"), containerDiv: HTMLElement) {
+export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
   // create html
   const mainDiv = createDiv(containerDiv, 'main', 'main');
   createLog(containerDiv);
@@ -25,12 +25,12 @@ export function demo(Video: typeof import("twilio-video"), containerDiv: HTMLEle
   const localTracks: LocalTrack[] = [];
   const rooms: Room[] = [];
   // window.Twilio = { Video, rooms };
-  const  { shouldAutoAttach, shouldAutoPublish, getEnv } = createRoomControls({
+  const  { shouldAutoAttach, shouldAutoPublish } = createRoomControls(
     container,
     Video,
     localTracks,
     roomJoined,
-  });
+  );
 
   const { roomAdded, roomRemoved } = createLocalTracksControls({
     container,
@@ -42,12 +42,12 @@ export function demo(Video: typeof import("twilio-video"), containerDiv: HTMLEle
   });
 
   // Successfully connected!
-  function roomJoined(room: Room, logger : typeof Logger) {
+  function roomJoined(room: Room, logger : typeof Logger, env: string) {
     logger = logger || Video.Logger.getLogger('twilio-video');
     rooms.push(room);
     roomAdded(room);
     log(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
-    renderRoom({ room, container: mainDiv, shouldAutoAttach, env: getEnv(), logger });
+    renderRoom({ room, container: mainDiv, shouldAutoAttach, env, logger });
     room.on('disconnected', (_, err) => {
       log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {

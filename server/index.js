@@ -19,8 +19,8 @@ const MAX_ALLOWED_SESSION_DURATION = 14400;
 
 
 function getCredentials(environment) {
-  const { accountSid, signingKeySid, signingKeySecret } = credentials[environment];
-  return { accountSid, signingKeySid, signingKeySecret, environment };
+  const { accountSid, signingKeySid, signingKeySecret, authToken } = credentials[environment];
+  return { accountSid, authToken, signingKeySid, signingKeySecret, environment };
 }
 
 function createAccessToken({ environment = 'prod', identity, roomName }) {
@@ -76,6 +76,13 @@ async function completeRoom({ environment = 'prod', roomName }) {
 // Create Express webapp.
 const app = express();
 app.use(cors({ origin: true }));
+
+app.get('/getCreds', function(request, response) {
+  const { environment = 'prod' } = request.query;
+  const { accountSid, signingKeySid, signingKeySecret, authToken } = getCredentials(environment);
+  response.set('Content-Type', 'application/json');
+  response.send({ accountSid, authToken, environment, signingKeySid, signingKeySecret });
+});
 
 app.get('/token', async function(request, response) {
   const { identity = randomName(), environment = 'prod', topology, roomName, recordParticipantsOnConnect } = request.query;

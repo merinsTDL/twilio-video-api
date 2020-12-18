@@ -1,17 +1,17 @@
-import { randomItem } from './randomItem.js';
+import { randomItem } from './randomItem';
 
 export function randomName() {
   var ADJECTIVES = [
-    'Abrasive', 'Brash', 'Callous', 'Daft', 'Eccentric', 'Fiesty', 'Golden',
-    'Holy', 'Ignominious', 'Joltin', 'Killer', 'Luscious', 'Mushy', 'Nasty',
+    'Abrasive', 'Brash', 'Callous', 'Daft', 'Eccentric', 'Finest', 'Golden',
+    'Holy', 'Ignominious', 'Jolted', 'Killer', 'Luscious', 'Mushy', 'Nasty',
     'OldSchool', 'Pompous', 'Quiet', 'Rowdy', 'Sneaky', 'Tawdry',
     'Unique', 'Vivacious', 'Wicked', 'Xenophobic', 'Yawning', 'Zesty'
   ];
 
   var FIRST_NAMES = [
     'Anna', 'Bobby', 'Cameron', 'Danny', 'Emmett', 'Frida', 'Gracie', 'Hannah',
-    'Isaac', 'Jenova', 'Kendra', 'Lando', 'Mufasa', 'Nate', 'Owen', 'Penny',
-    'Quincy', 'Roddy', 'Samantha', 'Tammy', 'Ulysses', 'Victoria', 'Wendy',
+    'Isaac', 'Jenna', 'Kendra', 'Landon', 'Mufasa', 'Nate', 'Owen', 'Penny',
+    'Quincy', 'Ruddy', 'Samantha', 'Tammy', 'Ulysses', 'Victoria', 'Wendy',
     'Xander', 'Yolanda', 'Zelda'
   ];
 

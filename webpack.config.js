@@ -32,6 +32,7 @@ module.exports = {
     contentBase: './dist',
     proxy: {
       '/token': 'http://localhost:3000',
+      '/getCreds': 'http://localhost:3000',
       '/settings': 'http://localhost:9000'
     }
   }

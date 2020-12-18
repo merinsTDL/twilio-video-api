@@ -1,13 +1,21 @@
 /* eslint-disable no-console */
-import createButton from '../old_jsutilmodules/button.js';
-import { createDiv } from '../old_jsutilmodules/createDiv.js';
-import generateAudioTrack from '../old_jsutilmodules/syntheticaudio.js';
-import generateVideoTrack from '../old_jsutilmodules/syntheticvideo.js';
-import { getBooleanUrlParam } from '../old_jsutilmodules/getBooleanUrlParam.js';
-import { getDeviceSelectionOptions } from '../old_jsutilmodules/getDeviceSelectionOptions.js';
-import { renderLocalTrack } from './renderLocalTrack.js';
+import createButton from './components/button';
+import { createDiv } from './components/createDiv';
+import generateAudioTrack from './old_jsutilmodules/syntheticaudio.js';
+import generateVideoTrack from './old_jsutilmodules/syntheticvideo.js';
+import { getBooleanUrlParam } from './components/getBooleanUrlParam';
+import { getDeviceSelectionOptions } from './old_jsutilmodules/getDeviceSelectionOptions.js';
+import { renderLocalTrack } from './old_es6/renderLocalTrack.js';
+import { Room, LocalTrack } from 'twilio-video';
 
-export function createLocalTracksControls({ container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish }) {
+export function createLocalTracksControls({ container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
+  container: HTMLElement,
+  rooms: Room[],
+  Video: typeof import('twilio-video'),
+  localTracks: LocalTrack[],
+  shouldAutoAttach: () => boolean,
+  shouldAutoPublish: () => boolean
+}) {
   container = createDiv(container, 'localTracks');
 
   let number = 0;
@@ -18,7 +26,7 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   const localTracksContainer = createDiv(container, 'trackRenders');
 
   const renderedTracks = new Map();
-  function renderLocalTrack2(track, videoDevices) {
+  function renderLocalTrack2(track: LocalTrack, videoDevices?: MediaDeviceInfo[]) {
     localTracks.push(track);
     renderedTracks.set(track, renderLocalTrack({
       container: localTracksContainer,
@@ -47,7 +55,7 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   // eslint-disable-next-line no-unused-vars
   const btnSyntheticAudio = createButton('+ Synthetic Audio', localTrackButtonsContainer, async () => {
     const thisTrackName = 'Audio-' + number++;
-    const msTrack = await generateAudioTrack(10);
+    const msTrack = await generateAudioTrack();
     const localTrack = new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });
@@ -93,11 +101,11 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   }
 
   return {
-    roomAdded: room  => {
-      [...renderedTracks.values()].forEach(renderedTrack => renderedTrack.roomAdded(room));
+    roomAdded: (room: Room)  => {
+      Array.from(renderedTracks.values()).forEach(renderedTrack => renderedTrack.roomAdded(room));
     },
-    roomRemoved: room => {
-      [...renderedTracks.values()].forEach(renderedTrack => renderedTrack.roomRemoved(room));
+    roomRemoved: (room: Room) => {
+      Array.from(renderedTracks.values()).forEach(renderedTrack => renderedTrack.roomRemoved(room));
     },
   };
 }

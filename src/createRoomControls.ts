@@ -1,21 +1,23 @@
 /* eslint-disable no-console */
-import { randomName, randomRoomName } from './randomName.js';
-import createButton from '../old_jsutilmodules/button.js';
-import { createDiv } from '../old_jsutilmodules/createDiv.js';
-import { createElement } from '../old_jsutilmodules/createElement.js';
-import { createLabeledCheckbox } from '../old_jsutilmodules/createLabeledCheckbox.js';
-import { createLabeledInput } from '../old_jsutilmodules/createLabeledInput.js';
-import { createLink } from '../old_jsutilmodules/createLink.js';
-import { createSelection } from '../old_jsutilmodules/createSelection.js';
-import { getBooleanUrlParam } from '../old_jsutilmodules/getBooleanUrlParam.js';
-import { log } from '../old_jsutilmodules/log.js';
+import { randomName, randomRoomName } from  './randomName';
+import createButton from './components/button';
+import { createDiv } from './components/createDiv';
+import { createElement } from './components/createElement';
+import { createLabeledCheckbox } from './components/createLabeledCheckbox';
+import { createLabeledInput } from './components/createLabeledInput';
+import { createLink } from './components/createLink';
+import { createSelection } from './components/createSelection';
+import { getBooleanUrlParam } from './components/getBooleanUrlParam';
+import { log as log2 } from './components/log';
+import { Room, LocalTrack } from 'twilio-video';
+import log from 'logLevel';
 
-function handleSDKLogs(logger) {
+function handleSDKLogs(logger: log.Logger) {
   const originalFactory = logger.methodFactory;
-  logger.methodFactory = function(methodName, level, loggerName) {
+  logger.methodFactory = function(methodName: string, level: log.LogLevelNumbers, loggerName: string) {
     const method = originalFactory(methodName, level, loggerName);
-    return function(dateTime, logLevel, component, message, data) {
-      method(...arguments);
+    return function(dateTime: Date, logLevel: string, component: string, message: string, data: any) {
+      method(dateTime, logLevel, component, message, data);
       // check for signaling events that previously used to be
       // emitted on (now deprecated) eventListener
       // they are fired with message = `event`, and group == `signaling`
@@ -24,36 +26,23 @@ function handleSDKLogs(logger) {
       }
     };
   };
-  // logger.setLevel(logLevel);
-  // logger = Twilio.Video.Logger.getLogger('twilio-video');
-  // logger.setLevel('DEBUG');
-  // const originalFactory = logger.methodFactory;
-  //     logger.methodFactory = (methodName, level, loggerName) => {
-  //       const method = originalFactory(methodName, level, loggerName);
-  //       return (datetime, logLevel, component, message, event) => {
-  //         method(datetime, logLevel, component, message, event);
-  //         // check for signaling events that previously used to be
-  //         // emitted on (now deprecated) eventListener
-  //         // they are fired with message = `event`, and group == `signaling`
-  //         if (message === 'event' && event.group === 'signaling') {
-  //           console.log(`EventListenerAPI | ${event.name}`)
-  //         }
-  //       };
-  //     };
 }
 
-/**
- *
- * @param {*} container
- * @param {*} Video
- * @param {*} roomJoined - callback is called when a room is joined to.
- * @param {*} localTracks - array of local tracks.
- */
-export function createRoomControls({ container, Video, roomJoined, localTracks }) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const roomControlsDiv = createDiv(container, 'room-controls', 'room-controls');
+export interface IRoomControl {
+  shouldAutoAttach: () => boolean,
+  shouldAutoPublish: () => boolean,
+};
 
-  const twilioVideoVersion = createElement(roomControlsDiv, { type: 'h3', id: 'twilioVideoVersion' });
+export function createRoomControls(
+  container: HTMLElement,
+  Video: typeof import('twilio-video'),
+  localTracks: LocalTrack[],
+  roomJoined: (room: Room, logger: log.Logger, env?: string) => void
+): IRoomControl {
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomControlsDiv = createDiv(container, 'room-controls', 'room-controls') as HTMLDivElement;
+
+  const twilioVideoVersion = createElement({ container: roomControlsDiv, type: 'h3', id: 'twilioVideoVersion' });
   twilioVideoVersion.innerHTML = 'Twilio-Video@' + Video.version;
 
   const topologySelect = createSelection({
@@ -61,10 +50,10 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
     container: roomControlsDiv,
     options: ['group-small', 'peer-to-peer', 'group', 'go'],
     title: 'topology',
-    onChange: () => log('topology change:', topologySelect.getValue())
+    onChange: () => log2('topology change:', topologySelect.getValue())
   });
 
-  let extraConnectOptions;
+  let extraConnectOptions: { value: string; };
   const envSelect = createSelection({
     id: 'env',
     container: roomControlsDiv,
@@ -76,14 +65,14 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
         // eslint-disable-next-line no-use-before-define
         extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
       }
-      log('env change:', newEnv);
+      log2('env change:', newEnv);
     }
   });
 
   const tokenInput = createLabeledInput({
     container: roomControlsDiv,
-    labelText: createLink({ container: roomControlsDiv, linkText: 'Token or TokenUrl', linkUrl: 'https://www.twilio.com/console/video/project/testing-tools', newTab: true }),
-    placeHolder: 'Enter token or token server url',
+    labelText: createLink({ container: roomControlsDiv, linkText: 'Token or ServerUrl', linkUrl: 'https://www.twilio.com/console/video/project/testing-tools', newTab: true }),
+    placeHolder: 'Enter token or server url',
     labelClasses: ['tokenLabel'],
   });
 
@@ -124,7 +113,8 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
   localIdentity.value = urlParams.get('identity') || randomName();
   const { protocol, host, pathname } = window.location;
   console.log({ protocol, host, pathname });
-  tokenInput.value = urlParams.get('token') || `${protocol}//${host}/token`; // 'http://localhost:3000/token'
+  const tokenServerUrl = urlParams.get('server') ? urlParams.get('server') + "/token" : `${protocol}//${host}/token`;
+  tokenInput.value = urlParams.get('token') || tokenServerUrl
 
   // for working with dev env use: {"wsServer":"wss://us2.vss.dev.twilio.com/signaling"}
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ logLevel: 'warn' });
@@ -150,14 +140,14 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
       const topology = topologySelect.getValue();
       const environment = envSelect.getValue();
       const roomName = roomNameInput.value;
-      const recordParticipantsOnConnect = autoRecord.checked;
+      const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
 
       let url = new URL(tokenUrl);
 
       console.log('Getting Token For: ', { environment, topology, roomName, identity, recordParticipantsOnConnect });
       const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect };
-      url.search = new URLSearchParams(tokenOptions);
-      const response = await fetch(url);
+      url.search = (new URLSearchParams(tokenOptions)).toString();
+      const response = await fetch(url.toString());
       if (response.ok) {
         return response.json();
       }
@@ -170,7 +160,7 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
   }
 
 
-  function joinRoom(token) {
+  function joinRoom(token: string) {
     const roomName = roomNameInput.value;
     if (!roomName) {
       // eslint-disable-next-line no-alert
@@ -188,10 +178,11 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
       }
     }
 
-    log(`Joining room ${roomName} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
+    log2(`Joining room ${roomName} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
     const loggerName = `[${localIdentity.value}]:`;
     const logger = Video.Logger.getLogger(loggerName);
     handleSDKLogs(logger);
+
     const connectOptions = Object.assign({
       loggerName,
       tracks: autoPublish.checked ? localTracks : [],
@@ -200,15 +191,15 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
     }, additionalConnectOptions);
     // Join the Room with the token from the server and the
     // LocalParticipant's Tracks.
-    log(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)}`);
+    log2(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)}`);
 
     Video.connect(token, connectOptions)
       .then(room => {
-        roomJoined(room, logger);
+        roomJoined(room, logger, envSelect.getValue());
         // get new local identity for next join.
         localIdentity.value = randomName();
       }).catch(error => {
-        log('Could not connect to Twilio: ' + error.message);
+        log2('Could not connect to Twilio: ' + error.message);
       });
   }
 
@@ -218,7 +209,7 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
       const token = (await getRoomCredentials()).token;
       return joinRoom(token);
     } catch (ex) {
-      log('Failed: ', ex);
+      log2('Failed: ', ex);
     }
   });
 
@@ -226,7 +217,9 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
     btnJoin.click();
   }
 
-  if (typeof Video.testPreflight === 'function') {
+  // @ts-ignore
+  const testPreflight = Video.testPreflight;
+  if (testPreflight === 'function') {
     let preflightTest = null;
     createButton('preparePreflight', roomControlsDiv, async () => {
       const aliceToken = (await getRoomCredentials()).token;
@@ -234,32 +227,32 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
       createButton('testPreflight', roomControlsDiv, async () => {
         console.log('starting preflight');
         const environment = envSelect.getValue();
-        preflightTest = Video.testPreflight(aliceToken, bobToken, { duration: 10000, environment });
-        const deferred = {};
+        preflightTest = testPreflight(aliceToken, bobToken, { duration: 10000, environment });
+        const deferred: { reject?: (e: Error) => void, resolve?: (report: any) => void, promise?: Promise<any> } = {};
         deferred.promise = new Promise((resolve, reject) => {
           deferred.resolve = resolve;
           deferred.reject = reject;
         });
 
         const logger = Video.Logger.getLogger('twilio-video');
-        preflightTest.on('debug', (room1, room2) => {
+        preflightTest.on('debug', (room1: Room, room2: Room) => {
           console.log('preflight debug:', room1, room2);
           roomJoined(room1, logger);
           roomJoined(room2, logger);
         });
 
-        preflightTest.on('progress', progress => {
+        preflightTest.on('progress', (progress: string)  => {
           console.log('preflight progress:', progress);
         });
 
-        preflightTest.on('error', error => {
+        preflightTest.on('error', (error: Error) => {
           console.error('preflight error:', error);
-          deferred.reject(error);
+          deferred.reject && deferred.reject(error);
         });
 
-        preflightTest.on('completed', report => {
+        preflightTest.on('completed', (report: any) => {
           console.log('preflight completed:', JSON.stringify(report, null, 4));
-          deferred.resolve(report);
+          deferred.resolve && deferred.resolve(report);
         });
 
         await deferred.promise;
@@ -268,8 +261,7 @@ export function createRoomControls({ container, Video, roomJoined, localTracks }
   }
   return {
     shouldAutoAttach: () => autoAttach.checked,
-    shouldAutoPublish: () => autoPublish.checked,
-    getEnv: () => envSelect.getValue()
+    shouldAutoPublish: () => autoPublish.checked
   };
 }
 
