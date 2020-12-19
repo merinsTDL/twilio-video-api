@@ -1,4 +1,4 @@
-import createButton from './button';
+import { createButton } from './button';
 import { createDiv } from './createDiv';
 
 export function createCollapsibleDiv({ container, headerText, divClass } : {

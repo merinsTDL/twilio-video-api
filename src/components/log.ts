@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import createButton from './button';
+import { createButton } from './button';
 
 let logClearBtn: { btn: HTMLButtonElement; show: (visible: boolean) => void; text: (newText: string) => void; click: () => void; enable: () => void; disable: () => void; };
 let realLogDiv: HTMLDivElement;

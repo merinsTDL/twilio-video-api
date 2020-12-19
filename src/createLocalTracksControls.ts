@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
-import createButton from './components/button';
+import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import generateAudioTrack from './old_jsutilmodules/syntheticaudio.js';
 import generateVideoTrack from './old_jsutilmodules/syntheticvideo.js';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
-import { getDeviceSelectionOptions } from './old_jsutilmodules/getDeviceSelectionOptions.js';
-import { renderLocalTrack } from './old_es6/renderLocalTrack.js';
-import { Room, LocalTrack } from 'twilio-video';
+import { getDeviceSelectionOptions } from './getDeviceSelectionOptions';
+import { renderLocalTrack } from './renderLocalTrack';
+import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
 
 export function createLocalTracksControls({ container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
   container: HTMLElement,
@@ -26,15 +26,15 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   const localTracksContainer = createDiv(container, 'trackRenders');
 
   const renderedTracks = new Map();
-  function renderLocalTrack2(track: LocalTrack, videoDevices?: MediaDeviceInfo[]) {
+  function renderLocalTrack2(track: LocalAudioTrack | LocalVideoTrack, videoDevices: MediaDeviceInfo[] = []) {
     localTracks.push(track);
     renderedTracks.set(track, renderLocalTrack({
       container: localTracksContainer,
       rooms,
       track,
       videoDevices,
-      shouldAutoAttach: shouldAutoAttach(),
-      shouldAutoPublish: shouldAutoPublish(),
+      autoAttach: shouldAutoAttach(),
+      autoPublish: shouldAutoPublish(),
       onClosed: () => {
         const index = localTracks.indexOf(track);
         if (index > -1) {

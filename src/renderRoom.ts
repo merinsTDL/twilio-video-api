@@ -1,33 +1,60 @@
 /* eslint-disable no-console */
-import createButton from '../old_jsutilmodules/button.js';
-import { createDiv } from '../old_jsutilmodules/createDiv.js';
-import { createElement } from '../old_jsutilmodules/createElement.js';
-import createLabeledStat from '../old_jsutilmodules/labeledstat.js';
-import { createLink } from '../old_jsutilmodules/createLink.js';
-import { createSelection } from '../old_jsutilmodules/createSelection.js';
-import { getCreds } from './getCreds.js';
-import { log } from '../old_jsutilmodules/log.js';
-import { renderTrack } from './renderTrack.js';
-import { updateTrackStats } from './renderLocalTrack.js';
+import { createButton } from './components/button';
+import { createDiv } from './components/createDiv';
+import { createElement } from './components/createElement';
+import { createLabeledStat, ILabeledStat } from './components/labeledstat';
+import { createLink } from './components/createLink';
+import { createSelection } from './components/createSelection';
+import { getCreds } from './getCreds';
+import { log as log2 } from './components/log';
+import { renderTrack } from './renderTrack';
+import { updateTrackStats } from './renderLocalTrack';
+import {
+  Room,
+  LocalTrack,
+  LocalAudioTrack,
+  LocalVideoTrack,
+  RemoteAudioTrack,
+  RemoteVideoTrack,
+  TwilioError,
+  RemoteParticipant,
+  TrackPublication,
+  RemoteTrackPublication,
+  LocalAudioTrackStats,
+  LocalVideoTrackStats,
+  RemoteAudioTrackStats,
+  RemoteVideoTrackStats
+} from 'twilio-video';
+import log from 'logLevel';
 
 
-function renderTrackPublication(trackPublication, container, shouldAutoAttach) {
+function renderTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean) {
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
   container = createDiv(container, 'publication', trackContainerId);
-  const trackSid = createElement(container, { type: 'h6', classNames: ['participantSid'] });
+  const trackSid = createElement({ container, type: 'h6', classNames: ['participantSid'] });
   trackSid.innerHTML = `${trackPublication.kind}:${trackPublication.trackSid}`;
 
-  let renderedTrack = null;
-  let statBytes = null;
+  let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
+  let statBytes: ILabeledStat;
+
+  function canRenderTrack(track: any): track is LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack {
+    return track;
+  }
+
   function renderLocalTrack() {
-    renderedTrack = renderTrack({
-      track: trackPublication.track,
-      container,
-      shouldAutoAttach
-    });
-    const trackBytesDiv = createDiv(container, 'remoteTrackControls');
-    statBytes = createLabeledStat(trackBytesDiv, 'bytes recd', { className: 'bytes', useValueToStyle: true });
-    statBytes.setText('0');
+    const track = trackPublication.track;
+    if (canRenderTrack(track)) {
+      renderedTrack = renderTrack({
+        track,
+        container,
+        autoAttach
+      });
+      const trackBytesDiv = createDiv(container, 'remoteTrackControls');
+      statBytes = createLabeledStat({ container: trackBytesDiv, label: 'bytes recd', className: 'bytes', useValueToStyle: true });
+      statBytes.setText('0');
+    } else {
+      console.warn('CanRender returned false for ', track);
+    }
   }
 
   if (trackPublication.isSubscribed) {
@@ -35,19 +62,19 @@ function renderTrackPublication(trackPublication, container, shouldAutoAttach) {
   }
 
   trackPublication.on('subscribed', function(track) {
-    log(`Subscribed to ${trackPublication.kind}:${track.name}`);
+    log2(`Subscribed to ${trackPublication.kind}:${track.name}`);
     renderLocalTrack();
   });
 
   trackPublication.on('unsubscribed', () => {
-    renderedTrack.stopRendering();
+    renderedTrack?.stopRendering();
     renderedTrack = null;
   });
 
   return {
-    setBytesReceived: bytesReceived => {
+    setBytesReceived: (bytesReceived: number) => {
       if (statBytes) {
-        statBytes.setText(bytesReceived);
+        statBytes.setText(bytesReceived.toString());
       }
     },
     trackPublication,
@@ -62,9 +89,9 @@ function renderTrackPublication(trackPublication, container, shouldAutoAttach) {
   };
 }
 
-export function renderParticipant(participant, container, shouldAutoAttach) {
+export function renderParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) {
   container = createDiv(container, 'participantDiv', `participantContainer-${participant.identity}`);
-  const name = createElement(container, { type: 'h3', classNames: ['participantName'] });
+  const name = createElement({ container, type: 'h3', classNames: ['participantName'] });
 
   name.innerHTML = participant.identity;
   const participantMedia = createDiv(container, 'participantMediaDiv');
@@ -87,15 +114,15 @@ export function renderParticipant(participant, container, shouldAutoAttach) {
   });
   return {
     container,
-    updateStats: ({ trackSid, bytesReceived }) => {
-      [...renderedPublications.keys()].forEach(thisTrackSid => {
+    updateStats: ({ trackSid, bytesReceived } : { trackSid: string, bytesReceived: number }) => {
+      Array.from(renderedPublications.keys()).forEach(thisTrackSid => {
         if (trackSid === thisTrackSid) {
           renderedPublications.get(thisTrackSid).setBytesReceived(bytesReceived);
         }
       });
     },
     stopRendering: () => {
-      [...renderedPublications.keys()].forEach(trackSid => {
+      Array.from(renderedPublications.keys()).forEach(trackSid => {
         renderedPublications.get(trackSid).stopRendering();
         renderedPublications.delete(trackSid);
       });
@@ -104,14 +131,14 @@ export function renderParticipant(participant, container, shouldAutoAttach) {
   };
 }
 
-async function createRoomButtons({ room, container, env }) {
+async function createRoomButtons({ room, container, env }: { room: Room, container: HTMLElement, env: string }) {
   let credentialsAt;
-  let creds;
+  let creds: { signingKeySid: any; signingKeySecret: any; };
   try {
     creds = await getCreds(env);
     credentialsAt = `${creds.signingKeySid}:${creds.signingKeySecret}@`;
   } catch (e) {
-    log('failed to load credentials: ', e);
+    log2('failed to load credentials: ', e);
     credentialsAt = '';
   }
 
@@ -151,11 +178,29 @@ async function createRoomButtons({ room, container, env }) {
 }
 
 
-export async function renderRoom({ room, container, shouldAutoAttach, env = 'prod', logger }) {
+function getCurrentLoggerLevelAsString(logger: log.Logger): string {
+  const levelNumToString = new Map<number, string>() ;
+  levelNumToString.set(logger.levels.TRACE, 'TRACE');
+  levelNumToString.set(logger.levels.DEBUG, 'DEBUG');
+  levelNumToString.set(logger.levels.INFO, 'INFO');
+  levelNumToString.set(logger.levels.WARN, 'WARN');
+  levelNumToString.set(logger.levels.ERROR, 'ERROR');
+  levelNumToString.set(logger.levels.SILENT, 'SILENT');
+  const currentLevelStr = levelNumToString.get(logger.getLevel()) as string;
+  return currentLevelStr;
+}
+
+export async function renderRoom({ room, container, shouldAutoAttach, env = 'prod', logger }: {
+  room: Room,
+  container: HTMLElement,
+  shouldAutoAttach: () => boolean,
+  env?: string,
+  logger: log.Logger
+}) {
   container = createDiv(container, 'room-container');
   console.log(logger.levels);
-  const options = Object.keys(logger.levels);
-  const currentLevel = Object.keys(logger.levels).find(key => logger.levels[key] === logger.getLevel());
+  const options  = Object.keys(logger.levels);
+  const currentLevel = getCurrentLoggerLevelAsString(logger);
   const logLevelSelect = createSelection({
     id: 'logLevel',
     container,
@@ -163,28 +208,29 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
     // options: ['warn', 'debug', 'info', 'error', 'silent'],
     title: 'logLevel',
     onChange: () => {
-      log(`setting logLevel: ${logLevelSelect.getValue()} for ${room.localParticipant.identity} in ${room.sid}`);
-      logger.setLevel(logLevelSelect.getValue());
+      log2(`setting logLevel: ${logLevelSelect.getValue()} for ${room.localParticipant.identity} in ${room.sid}`);
+      logger.setLevel(logLevelSelect.getValue() as log.LogLevelDesc);
     }
   });
   logLevelSelect.setValue(currentLevel);
 
   const roomHeaderDiv = createDiv(container, 'roomHeaderDiv');
 
-  const roomSid = createElement(roomHeaderDiv, { type: 'h3', classNames: ['roomHeaderText'] });
+  const roomSid = createElement({ container: roomHeaderDiv, type: 'h3', classNames: ['roomHeaderText'] });
   roomSid.innerHTML = ` ${room.sid} `;
   await createRoomButtons({ env, room, container  });
-  const localParticipant = createLabeledStat(container, 'localParticipant', { className: 'localParticipant', useValueToStyle: true });
+  const localParticipant = createLabeledStat({ container, label: 'localParticipant', className: 'localParticipant', useValueToStyle: true });
   localParticipant.setText(room.localParticipant.identity);
-  const roomState = createLabeledStat(container, 'room.state', { className: 'roomstate', useValueToStyle: true });
-  const recording = createLabeledStat(container, 'room.isRecording', { className: 'recording', useValueToStyle: true });
-  const networkQuality = createLabeledStat(container, 'room.localParticipant.networkQualityLevel', { className: 'networkquality', useValueToStyle: true });
+  const roomState = createLabeledStat({ container, label: 'room.state', className: 'roomstate', useValueToStyle: true });
+  const recording = createLabeledStat({ container, label: 'room.isRecording', className: 'recording', useValueToStyle: true });
+  const networkQuality = createLabeledStat({ container, label: 'room.localParticipant.networkQualityLevel', className: 'networkquality', useValueToStyle: true });
 
   const updateNetworkQuality = () => {
     console.log('room.localParticipant.networkQualityLevel: ', room.localParticipant.networkQualityLevel);
-    networkQuality.setText(room.localParticipant.networkQualityLevel);
+
+    networkQuality.setText(`${room.localParticipant.networkQualityLevel}`);
   };
-  const updateRecordingState = () => recording.setText(room.isRecording);
+  const updateRecordingState = () => recording.setText(`${room.isRecording}`);
   const updateRoomState = () => roomState.setText(room.state);
 
   room.localParticipant.addListener('networkQualityLevelChanged', updateNetworkQuality);
@@ -192,18 +238,18 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   room.addListener('reconnected', updateRoomState);
   room.addListener('reconnecting', updateRoomState);
   room.addListener('recordingStarted', () => {
-    log('recordingStarted');
+    log2('recordingStarted');
     updateRecordingState();
   });
   room.addListener('recordingStopped', () => {
-    log('recordingStopped');
+    log2('recordingStopped');
     updateRecordingState();
   });
   updateRoomState();
   updateRecordingState();
   updateNetworkQuality();
 
-  const isDisconnected = room.disconnected;
+  const isDisconnected = room.state === 'disconnected';
   const btnDisconnect = createButton('disconnect', roomHeaderDiv, () => {
     room.disconnect();
     container.remove();
@@ -238,25 +284,36 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   var statUpdater = setInterval(async () => {
     const statReports = await room.getStats();
     statReports.forEach(statReport => {
-      ['remoteVideoTrackStats', 'remoteAudioTrackStats', 'localAudioTrackStats', 'localVideoTrackStats'].forEach(
-        trackType => {
-          statReport[trackType].forEach(trackStats => {
-            const { trackId, trackSid, bytesSent, bytesReceived } = trackStats;
-            [...renderedParticipants.keys()].forEach(key => {
-              renderedParticipants.get(key).updateStats({ trackId, trackSid, bytesSent, bytesReceived, trackType });
-            });
-            updateTrackStats({ room, trackId, trackSid, bytesSent, bytesReceived, trackType });
+      [
+        statReport.localAudioTrackStats,
+        statReport.localVideoTrackStats,
+      ].forEach(trackStatArr => {
+        trackStatArr.forEach((trackStat: LocalAudioTrackStats | LocalVideoTrackStats) => {
+          const { trackId, trackSid, bytesSent } = trackStat;
+          updateTrackStats({ room, trackId, trackSid, bytesSent });
+        })
+      });
+
+      [
+        statReport.remoteVideoTrackStats,
+        statReport.remoteAudioTrackStats,
+      ].forEach(trackStatArr => {
+        trackStatArr.forEach((trackStat: RemoteAudioTrackStats |RemoteVideoTrackStats) => {
+          const { trackId, trackSid, bytesReceived } = trackStat;
+          Array.from(renderedParticipants.keys()).forEach(key => {
+            renderedParticipants.get(key).updateStats({ trackId, trackSid, bytesReceived, trackType: typeof trackStat });
           });
-        }
-      );
-    });
+        })
+      });
+
+    })
   }, 100);
 
   // Once the LocalParticipant leaves the room, detach the Tracks
   // of all Participants, including that of the LocalParticipant.
   room.on('disconnected', () => {
     clearInterval(statUpdater);
-    [...renderedParticipants.keys()].forEach(key => {
+    Array.from(renderedParticipants.keys()).forEach(key => {
       renderedParticipants.get(key).stopRendering();
       renderedParticipants.delete(key);
     });

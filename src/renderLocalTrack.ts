@@ -1,35 +1,46 @@
 /* eslint-disable no-console */
-import createButton from '../old_jsutilmodules/button.js';
-import { createDiv } from '../old_jsutilmodules/createDiv.js';
-import { createElement } from '../old_jsutilmodules/createElement.js';
-import createLabeledStat from '../old_jsutilmodules/labeledstat.js';
-import { log } from '../old_jsutilmodules/log.js';
-import { renderTrack } from './renderTrack.js';
+import { createButton, IButton } from './components/button';
+import { createDiv } from './components/createDiv';
+import { createElement } from './components/createElement';
+import { createLabeledStat, ILabeledStat } from './components/labeledstat';
+import { log } from './components/log';
+import { renderTrack } from './renderTrack';
+import { Room, LocalAudioTrack, LocalVideoTrack, Track, TrackPublication, LocalTrackPublication } from 'twilio-video';
 
-const publishControls = new Map(); //  Map(track => Map( room => publishControl ))
-export function updateTrackStats({ room, trackId, trackSid, bytesSent, bytesReceived, trackType }) {
+const publishControls = new Map<Track.SID, Map<Room, IPublishControl>>();
+export function updateTrackStats({ room, trackId, trackSid, bytesSent } : {
+  room: Room,
+  trackId: Track.SID,
+  trackSid: Track.SID,
+  bytesSent: number | null
+}) {
   const trackPublishControls = publishControls.get(trackId);
   if (trackPublishControls) {
     const publishControl = trackPublishControls.get(room);
     if (publishControl) {
-      if (['localAudioTrackStats', 'localVideoTrackStats'].includes(trackType)) {
-        publishControl.updateTrackStats({ room, trackId, trackSid, bytesSent, bytesReceived, trackType });
-      }
+        bytesSent = bytesSent || 0;
+        publishControl.updateTrackStats({ trackSid, bytesSent });
     }
   }
 }
 
+type IPublishControl = {
+  unPublishBtn: IButton;
+  stopRendering: () => void;
+  updateTrackStats: ({trackSid, bytesSent} : { trackSid: Track.SID, bytesSent: number}) => void
+}
+
 // creates buttons to publish unpublish track in a given room.
-function createRoomPublishControls(container, room, track, shouldAutoPublish) {
+function createRoomPublishControls(container: HTMLElement, room: Room, track: LocalAudioTrack | LocalVideoTrack, shouldAutoPublish: boolean): IPublishControl {
   container = createDiv(container, 'localTrackControls');
-  const roomSid = createElement(container, { type: 'h8', classNames: ['roomHeader'] });
+  const roomSid = createElement({ container, type: 'h8', classNames: ['roomHeader'] });
 
   roomSid.innerHTML = room.localParticipant.identity;
 
-  let unPublishBtn = null;
-  let publishBtn = null;
-  let statBytes = null;
-  let trackPublication = [...room.localParticipant.tracks.values()].find(trackPub => trackPub.track === track);
+  let unPublishBtn: IButton;
+  let publishBtn: IButton;
+  let statBytes: ILabeledStat;
+  let trackPublication: LocalTrackPublication | null = Array.from(room.localParticipant.tracks.values()).find(trackPub => trackPub.track === track) || null;
   const updateControls = () => {
     publishBtn.show(!trackPublication);
     unPublishBtn.show(!!trackPublication);
@@ -45,7 +56,7 @@ function createRoomPublishControls(container, room, track, shouldAutoPublish) {
     publishBtn.enable();
   });
 
-  statBytes = createLabeledStat(container, 'bytes sent', { className: 'bytes', useValueToStyle: true });
+  statBytes = createLabeledStat({ container, label: 'bytes sent', className: 'bytes', useValueToStyle: true });
   statBytes.setText('0');
 
   unPublishBtn = createButton('unpublish', container, () => {
@@ -63,9 +74,12 @@ function createRoomPublishControls(container, room, track, shouldAutoPublish) {
 
   return {
     unPublishBtn,
-    updateTrackStats: ({ trackSid, bytesSent }) => {
+    updateTrackStats: ({ trackSid, bytesSent } : {
+      trackSid: Track.SID,
+      bytesSent: number
+    }) => {
       if (trackPublication && trackPublication.trackSid === trackSid) {
-        statBytes.setText(bytesSent);
+        statBytes.setText(bytesSent.toString());
       }
     },
     stopRendering: () => {
@@ -74,9 +88,18 @@ function createRoomPublishControls(container, room, track, shouldAutoPublish) {
   };
 }
 
-export function renderLocalTrack({ rooms, track, container, shouldAutoAttach, shouldAutoPublish, onClosed, videoDevices = [] }) {
+
+export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, onClosed, videoDevices = [] }: {
+  rooms: Room[],
+  track: LocalAudioTrack | LocalVideoTrack,
+  container: HTMLElement,
+  autoAttach: boolean,
+  autoPublish: boolean,
+  onClosed: () => void,
+  videoDevices: MediaDeviceInfo[]
+}) {
   const localTrackContainer = createDiv(container, 'localTrackContainer');
-  const { stopRendering } = renderTrack({ track, container: localTrackContainer, shouldAutoAttach });
+  const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
   const localTrackControls = createDiv(localTrackContainer, 'localTrackControls');
   createButton('disable', localTrackControls, () => track.disable());
@@ -88,7 +111,7 @@ export function renderLocalTrack({ rooms, track, container, shouldAutoAttach, sh
   });
 
   createButton('restart', localTrackControls, () => {
-    track.restart().catch(err => {
+    track.restart().catch((err: Error) => {
       console.log('track.restart failed', err);
     });
   });
@@ -109,11 +132,11 @@ export function renderLocalTrack({ rooms, track, container, shouldAutoAttach, sh
   publishControls.set(track.id, trackPublishControls);
 
   // for existing rooms, publish track if shouldAutoPublish
-  rooms.forEach(room => {
-    trackPublishControls.set(room, createRoomPublishControls(localTrackContainer, room, track, shouldAutoPublish));
+  rooms.forEach((room: Room) => {
+    trackPublishControls.set(room, createRoomPublishControls(localTrackContainer, room, track, autoPublish));
   });
 
-  const roomAdded = room => {
+  const roomAdded = (room: Room) => {
     if (!trackPublishControls.get(room)) {
       // for any rooms that are joined after track - do not auto publish,
       // as room starts of ith tracks depending on auto publish.
@@ -121,7 +144,7 @@ export function renderLocalTrack({ rooms, track, container, shouldAutoAttach, sh
     }
   };
 
-  const roomRemoved = room => {
+  const roomRemoved = (room: Room) => {
     const roomPublishControl = trackPublishControls.get(room);
     if (roomPublishControl) {
       roomPublishControl.stopRendering();
@@ -130,7 +153,7 @@ export function renderLocalTrack({ rooms, track, container, shouldAutoAttach, sh
   };
 
   const closeBtn = createButton('close', localTrackControls, () => {
-    [...trackPublishControls.keys()].forEach(room => {
+    Array.from(trackPublishControls.keys()).forEach(room => {
       const roomPublishControl = trackPublishControls.get(room);
       roomPublishControl.unPublishBtn.click();
       roomPublishControl.stopRendering();

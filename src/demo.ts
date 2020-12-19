@@ -5,20 +5,21 @@
 'use strict';
 
 import { Room, Logger, LocalTrack, TwilioError} from 'twilio-video';
-import { createLog, log } from './components/log';
+import { createLog, log as log2} from './components/log';
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { createDiv } from './components/createDiv';
 import { createLocalTracksControls } from './createLocalTracksControls';
 import { createRoomControls } from './createRoomControls';
-import { renderRoom } from './old_es6/renderRoom.js';
+import { renderRoom } from './renderRoom';
+import log from 'logLevel';
 
 export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
   // create html
   const mainDiv = createDiv(containerDiv, 'main', 'main');
   createLog(containerDiv);
-  log("Version: ", Video.version);
-  log("IsSupported: ", Video.isSupported);
-  log("UserAgent: ", navigator.userAgent);
+  log2("Version: ", Video.version);
+  log2("IsSupported: ", Video.isSupported);
+  log2("UserAgent: ", navigator.userAgent);
 
   const container = createCollapsibleDiv({ container: mainDiv, headerText: 'Local Controls', divClass: 'localControls' });
 
@@ -46,12 +47,12 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     logger = logger || Video.Logger.getLogger('twilio-video');
     rooms.push(room);
     roomAdded(room);
-    log(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
+    log2(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
     renderRoom({ room, container: mainDiv, shouldAutoAttach, env, logger });
     room.on('disconnected', (_, err) => {
-      log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
+      log2(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {
-        log('Error:', err);
+        log2('Error:', err);
       }
       const index = rooms.indexOf(room);
       if (index > -1) {

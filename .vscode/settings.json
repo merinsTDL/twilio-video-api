@@ -7,8 +7,10 @@
     "dominantspeakersignaling",
     "globalevents",
     "mediasignalingmanager",
+    "networkquality",
     "onicecandidate",
     "randomname",
+    "roomstate",
     "syntheticvideo",
     "trackswitchoffsignaling"
   ]

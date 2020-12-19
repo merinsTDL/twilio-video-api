@@ -1,4 +1,13 @@
-export default function createButton(text: string, container: HTMLElement, onClick: () => void) {
+export interface IButton {
+  btn: HTMLButtonElement,
+  show: (visible: boolean) => void;
+  text: (newText: string) => void;
+  click: () => void;
+  enable: () => void;
+  disable: () => void;
+};
+
+export function createButton(text: string, container: HTMLElement, onClick: () => void): IButton {
   const btn = document.createElement('button') as HTMLButtonElement;
   btn.innerHTML = text;
   btn.onclick = onClick;

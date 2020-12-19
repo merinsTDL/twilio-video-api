@@ -1,4 +1,4 @@
-export async function getCreds(environment) {
+export async function getCreds(environment: string): Promise<{signingKeySecret:string, signingKeySid: string }> {
   const { protocol, host } = window.location;
   const urlParams = new URLSearchParams(window.location.search);
   const serverUrl = urlParams.get('server') || `${protocol}//${host}`;

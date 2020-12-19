@@ -59,7 +59,8 @@ app supports various url parameters
 | topology      | type of room to use  |  `group-small`  |
 | env           | backend environment to use  |  `prod`  |
 | connectOptions| additional connect options to use  | `{"logLevel":"debug"}`   |
-| token         | token or token server url to use to join the room |  `/token`  |
+| token         | token  |  not specified  |
+| server        | server to use to acquire token and credentials |  `http://localhost:3000`  |
 
 
 when navigated to
@@ -69,4 +70,4 @@ The page will join room `foo` with `mak` as local identity and publish a video a
 
 
 # Online demo
-To join the room you would need to specify `token` parameter.
+To join the room you would need to specify `token` or `Server` parameter where the server is running.

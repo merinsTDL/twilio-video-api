@@ -20,7 +20,7 @@ module.exports = {
   },
   entry: {
     app: './src/app.ts',
-    foo: './src/admin.ts'
+    admin: './src/admin.ts'
   },
   output: {
     filename: '[name].js',

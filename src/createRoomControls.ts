@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { randomName, randomRoomName } from  './randomName';
-import createButton from './components/button';
+import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createElement } from './components/createElement';
 import { createLabeledCheckbox } from './components/createLabeledCheckbox';
@@ -113,8 +113,8 @@ export function createRoomControls(
   localIdentity.value = urlParams.get('identity') || randomName();
   const { protocol, host, pathname } = window.location;
   console.log({ protocol, host, pathname });
-  const tokenServerUrl = urlParams.get('server') ? urlParams.get('server') + "/token" : `${protocol}//${host}/token`;
-  tokenInput.value = urlParams.get('token') || tokenServerUrl
+  const serverUrl = urlParams.get('server') || 'http://localhost:3000';
+  tokenInput.value = urlParams.get('token') || serverUrl;
 
   // for working with dev env use: {"wsServer":"wss://us2.vss.dev.twilio.com/signaling"}
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ logLevel: 'warn' });
@@ -135,6 +135,8 @@ export function createRoomControls(
   async function getRoomCredentials() {
     const identity = localIdentity.value || randomName();
     let token = tokenInput.value;
+
+    // if token input is server url
     if (token.indexOf('http') >= 0) {
       let tokenUrl = token;
       const topology = topologySelect.getValue();
@@ -142,7 +144,7 @@ export function createRoomControls(
       const roomName = roomNameInput.value;
       const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
 
-      let url = new URL(tokenUrl);
+      let url = new URL(tokenUrl + '/token');
 
       console.log('Getting Token For: ', { environment, topology, roomName, identity, recordParticipantsOnConnect });
       const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect };
@@ -260,6 +262,7 @@ export function createRoomControls(
     });
   }
   return {
+    // TODO: also add getServerUrl
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked
   };

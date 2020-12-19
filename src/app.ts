@@ -2,7 +2,7 @@
 import Video from 'twilio-video';
 import { demo } from './demo';
 
-const css = require('./old_es6/index.css');
+const css = require('./index.css');
 
 /* eslint-disable no-console */
 console.log('makarand: loaded src/app.ts');
