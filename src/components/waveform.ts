@@ -1,7 +1,4 @@
 import { getAudioContext } from './getAudioContext';
-
-// const CANVAS_HEIGHT = 50;
-// const CANVAS_WIDTH = 100;
 const FFT_SIZE = 512;
 
 export function waveform({ width = 200, height = 150, mediaStream }: { mediaStream: MediaStream, width?: number, height?: number }) {

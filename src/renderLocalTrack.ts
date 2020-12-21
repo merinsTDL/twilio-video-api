@@ -128,7 +128,7 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
     });
   });
 
-  const trackPublishControls = new Map(); // room => publishControl
+  const trackPublishControls = new Map<Room, IPublishControl>();
   publishControls.set(track.id, trackPublishControls);
 
   // for existing rooms, publish track if shouldAutoPublish
@@ -153,12 +153,11 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   };
 
   const closeBtn = createButton('close', localTrackControls, () => {
-    Array.from(trackPublishControls.keys()).forEach(room => {
-      const roomPublishControl = trackPublishControls.get(room);
+    trackPublishControls.forEach((roomPublishControl: IPublishControl, room: Room) => {
       roomPublishControl.unPublishBtn.click();
       roomPublishControl.stopRendering();
       trackPublishControls.delete(room);
-    });
+    })
     stopRendering();
     track.stop();
     localTrackContainer.remove();

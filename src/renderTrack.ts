@@ -11,7 +11,7 @@ import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioT
  */
 export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   const audioElement = container.appendChild(track.attach());
-  const wave = waveform({ mediaStream: audioElement.srcObject as MediaStream, width: 200, height: 200 })
+  const wave = waveform({ mediaStream: audioElement.srcObject as MediaStream, width: 200, height: 150 })
   const canvasContainer = createDiv(container, 'canvasContainer');
   canvasContainer.appendChild(wave.element);
 
@@ -45,9 +45,6 @@ export function renderTrack({ track, container, autoAttach } : {
   const controlContainer = createDiv(trackContainer, 'trackControls');
 
   createButton('update', controlContainer, () => updateStats());
-  // createButton('setPriority High', controlContainer, () => {
-  //   track.setPriority('low');
-  // });
 
   let mediaControls: HTMLElement | null = null;
   let stopMediaRender: () => void;

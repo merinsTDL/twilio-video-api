@@ -23,12 +23,20 @@ import {
   LocalAudioTrackStats,
   LocalVideoTrackStats,
   RemoteAudioTrackStats,
-  RemoteVideoTrackStats
+  RemoteVideoTrackStats,
+  Track,
+  Participant
 } from 'twilio-video';
 import log from 'logLevel';
 
+export type IRenderedRemoteTrackPublication = {
+  setBytesReceived: (bytesReceived: number) => void;
+  trackPublication: RemoteTrackPublication;
+  container: HTMLElement;
+  stopRendering: () => void;
+}
 
-function renderTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean) {
+function renderTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
   container = createDiv(container, 'publication', trackContainerId);
   const trackSid = createElement({ container, type: 'h6', classNames: ['participantSid'] });
@@ -88,14 +96,19 @@ function renderTrackPublication(trackPublication : RemoteTrackPublication, conta
     }
   };
 }
+export type IRenderedRemoteParticipant = {
+  container: HTMLElement;
+  updateStats: ({ trackSid, bytesReceived } : { trackSid: string, bytesReceived: number }) => void;
+  stopRendering: () => void;
+}
 
-export function renderParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) {
+export function renderParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) : IRenderedRemoteParticipant {
   container = createDiv(container, 'participantDiv', `participantContainer-${participant.identity}`);
   const name = createElement({ container, type: 'h3', classNames: ['participantName'] });
 
   name.innerHTML = participant.identity;
   const participantMedia = createDiv(container, 'participantMediaDiv');
-  const renderedPublications = new Map();
+  const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {
     const rendered = renderTrackPublication(publication, participantMedia, shouldAutoAttach());
     renderedPublications.set(publication.trackSid, rendered);
@@ -115,17 +128,17 @@ export function renderParticipant(participant: RemoteParticipant, container:HTML
   return {
     container,
     updateStats: ({ trackSid, bytesReceived } : { trackSid: string, bytesReceived: number }) => {
-      Array.from(renderedPublications.keys()).forEach(thisTrackSid => {
-        if (trackSid === thisTrackSid) {
-          renderedPublications.get(thisTrackSid).setBytesReceived(bytesReceived);
+      renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
+        if (trackSid === renderedTrackSid) {
+          renderedTrackpublication.setBytesReceived(bytesReceived);
         }
-      });
+      })
     },
     stopRendering: () => {
-      Array.from(renderedPublications.keys()).forEach(trackSid => {
-        renderedPublications.get(trackSid).stopRendering();
-        renderedPublications.delete(trackSid);
-      });
+      renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
+        renderedTrackpublication.stopRendering();
+        renderedPublications.delete(renderedTrackSid);
+      })
       container.remove();
     }
   };
@@ -261,7 +274,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
 
   btnDisconnect.show(!isDisconnected);
 
-  const renderedParticipants = new Map();
+  const renderedParticipants = new Map<Participant.SID, IRenderedRemoteParticipant>();
   const remoteParticipantsContainer = createDiv(container, 'remote-participants', 'remote-participants');
   room.participants.forEach(participant => {
     renderedParticipants.set(participant.sid, renderParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
@@ -299,10 +312,11 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
         statReport.remoteAudioTrackStats,
       ].forEach(trackStatArr => {
         trackStatArr.forEach((trackStat: RemoteAudioTrackStats |RemoteVideoTrackStats) => {
-          const { trackId, trackSid, bytesReceived } = trackStat;
-          Array.from(renderedParticipants.keys()).forEach(key => {
-            renderedParticipants.get(key).updateStats({ trackId, trackSid, bytesReceived, trackType: typeof trackStat });
-          });
+          const { trackId, trackSid } = trackStat;
+          const bytesReceived = trackStat.bytesReceived || 0;
+          renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
+            renderedParticipant.updateStats({ trackSid, bytesReceived });
+          })
         })
       });
 
@@ -313,9 +327,9 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   // of all Participants, including that of the LocalParticipant.
   room.on('disconnected', () => {
     clearInterval(statUpdater);
-    Array.from(renderedParticipants.keys()).forEach(key => {
-      renderedParticipants.get(key).stopRendering();
-      renderedParticipants.delete(key);
+    renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
+      renderedParticipant.stopRendering();
+      renderedParticipants.delete(participantSid);
     });
   });
 }
