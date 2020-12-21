@@ -1,9 +1,9 @@
-import { Waveform } from './old_jsutilmodules/waveform.js';
+import { waveform } from './components/waveform';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createLabeledStat } from './components/labeledstat';
 import { createTrackStats } from './createTrackStats';
-import { AudioTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
+import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
 
 
 /**
@@ -11,13 +11,23 @@ import { AudioTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalV
  */
 export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   const audioElement = container.appendChild(track.attach());
-  const waveform = new Waveform();
-  waveform.setStream(audioElement.srcObject as MediaStream);
+  const wave = waveform({ mediaStream: audioElement.srcObject as MediaStream, width: 200, height: 200 })
   const canvasContainer = createDiv(container, 'canvasContainer');
+  canvasContainer.appendChild(wave.element);
 
-  // @ts-ignore
-  canvasContainer.appendChild(waveform.element);
-  return audioElement;
+  return {
+    mediaElement: audioElement,
+    stop: (): void => { wave.stop() }
+  }
+}
+
+export function attachVideoTrack(track: VideoTrack, container: HTMLElement) {
+  const videoElement = track.attach();
+  container.appendChild(videoElement);
+  return {
+    mediaElement: videoElement,
+    stop: (): void => {}
+  }
 }
 
 // Attach the Track to the DOM.
@@ -40,6 +50,7 @@ export function renderTrack({ track, container, autoAttach } : {
   // });
 
   let mediaControls: HTMLElement | null = null;
+  let stopMediaRender: () => void;
   const attachDetachBtn = createButton('attach', controlContainer, () => {
     if (mediaControls) {
       // track is already attached.
@@ -50,13 +61,10 @@ export function renderTrack({ track, container, autoAttach } : {
     } else {
       // track is detached.
       mediaControls = createDiv(trackContainer, 'mediaControls');
-      let audioVideoElement: HTMLMediaElement | null = null;
-      if (track.kind === 'audio') {
-        audioVideoElement = attachAudioTrack(track, mediaControls);
-      } else {
-        audioVideoElement = track.attach();
-        mediaControls.appendChild(audioVideoElement);
-      }
+      const mediaRenderer = track.kind === 'audio' ? attachAudioTrack(track, mediaControls): attachVideoTrack(track, mediaControls);
+      const audioVideoElement = mediaRenderer.mediaElement;
+      stopMediaRender = mediaRenderer.stop;
+
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
       createButton('update', mediaControls, () => updateMediaElementState());
@@ -86,6 +94,7 @@ export function renderTrack({ track, container, autoAttach } : {
     stopRendering: () => {
       track.detach().forEach(element => element.remove());
       trackContainer.remove();
+      stopMediaRender();
     }
   };
 }

@@ -1,11 +1,17 @@
+interface CanvasElement extends HTMLCanvasElement {
+  captureStream(frameRate?: number): MediaStream;
+}
+
 export function syntheticVideo({ width = 640, height = 480, word = 'hello' } = {}) {
+
   const canvas = Object.assign(
     document.createElement('canvas'), { width, height }
-  );
-  let ctx = canvas.getContext('2d');
+  ) as CanvasElement;
+
+  let ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   ctx.fillStyle = 'green';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const wordWidth = ctx.measureText(word).width;
+  // const wordWidth = ctx.measureText(word).width;
   let r = 0;
   requestAnimationFrame(function animate() {
     r += Math.PI / 180;
@@ -14,7 +20,8 @@ export function syntheticVideo({ width = 640, height = 480, word = 'hello' } = {
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(r);
     ctx.font = '30px Verdana';
-    ctx.fillText(word, -wordWidth / 2, 4);
+    ctx.textAlign = 'center';
+    ctx.fillText(word, 0, 0);
     ctx.restore();
     requestAnimationFrame(animate);
   });

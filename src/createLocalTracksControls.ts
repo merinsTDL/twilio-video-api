@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
-import generateAudioTrack from './old_jsutilmodules/syntheticaudio.js';
-import generateVideoTrack from './old_jsutilmodules/syntheticvideo.js';
+import { syntheticAudio } from './components/syntheticaudio';
+import { syntheticVideo }  from './components/syntheticvideo';
+
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { getDeviceSelectionOptions } from './getDeviceSelectionOptions';
 import { renderLocalTrack } from './renderLocalTrack';
@@ -55,7 +56,7 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   // eslint-disable-next-line no-unused-vars
   const btnSyntheticAudio = createButton('+ Synthetic Audio', localTrackButtonsContainer, async () => {
     const thisTrackName = 'Audio-' + number++;
-    const msTrack = await generateAudioTrack();
+    const msTrack = await syntheticAudio();
     const localTrack = new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });
@@ -67,11 +68,10 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
     renderLocalTrack2(localTrack);
   });
 
-  // eslint-disable-next-line no-unused-vars
+
   const btnSyntheticVideo = createButton('+ Synthetic Video', localTrackButtonsContainer, async () => {
-    const canvas = document.createElement('canvas');
     const thisTrackName = 'Video-' + number++;
-    const msTrack = await generateVideoTrack(canvas, thisTrackName);
+    const msTrack = await syntheticVideo({ width: 300, height: 150, word: thisTrackName });
     const localTrack = new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });
