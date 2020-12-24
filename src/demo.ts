@@ -25,7 +25,9 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
 
   const localTracks: LocalTrack[] = [];
   const rooms: Room[] = [];
-  // window.Twilio = { Video, rooms };
+
+  // @ts-ignore
+  window.Twilio = { Video, rooms };
   const  { shouldAutoAttach, shouldAutoPublish } = createRoomControls(
     container,
     Video,

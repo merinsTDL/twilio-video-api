@@ -30,13 +30,13 @@ import {
 import log from 'logLevel';
 
 export type IRenderedRemoteTrackPublication = {
-  setBytesReceived: (bytesReceived: number) => void;
+  setBytesReceived: (bytesReceived: number, timestamp: number) => void;
   trackPublication: RemoteTrackPublication;
   container: HTMLElement;
   stopRendering: () => void;
 }
 
-function renderTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
+function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
   container = createDiv(container, 'publication', trackContainerId);
   const trackSid = createElement({ container, type: 'h6', classNames: ['participantSid'] });
@@ -44,34 +44,47 @@ function renderTrackPublication(trackPublication : RemoteTrackPublication, conta
 
   let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
   let statBytes: ILabeledStat;
+  let priority: ILabeledStat;
+  let publisherPriority: ILabeledStat;
+
 
   function canRenderTrack(track: any): track is LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack {
     return track;
   }
 
-  function renderLocalTrack() {
+  function renderRemoteTrack() {
     const track = trackPublication.track;
     if (canRenderTrack(track)) {
+
       renderedTrack = renderTrack({
         track,
         container,
         autoAttach
       });
       const trackBytesDiv = createDiv(container, 'remoteTrackControls');
-      statBytes = createLabeledStat({ container: trackBytesDiv, label: 'bytes recd', className: 'bytes', useValueToStyle: true });
+      statBytes = createLabeledStat({ container: trackBytesDiv, label: 'received kbps', className: 'bytes', useValueToStyle: false });
       statBytes.setText('0');
+      priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority', className: 'priority', useValueToStyle: false });
+      priority.setText(`${track.priority}`);
+
+      publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority', className: 'priority', useValueToStyle: false });
+      publisherPriority.setText(`${trackPublication.publishPriority}`);
+      trackPublication.on('publishPriorityChanged', () => {
+        publisherPriority.setText(`${trackPublication.publishPriority}`);
+      });
+
     } else {
       console.warn('CanRender returned false for ', track);
     }
   }
 
   if (trackPublication.isSubscribed) {
-    renderLocalTrack();
+    renderRemoteTrack();
   }
 
   trackPublication.on('subscribed', function(track) {
     log2(`Subscribed to ${trackPublication.kind}:${track.name}`);
-    renderLocalTrack();
+    renderRemoteTrack();
   });
 
   trackPublication.on('unsubscribed', () => {
@@ -79,10 +92,16 @@ function renderTrackPublication(trackPublication : RemoteTrackPublication, conta
     renderedTrack = null;
   });
 
+  let previousBytes = 0;
+  let previousTime = 0;
   return {
-    setBytesReceived: (bytesReceived: number) => {
+    setBytesReceived: (bytesReceived: number, timeStamp: number) => {
       if (statBytes) {
-        statBytes.setText(bytesReceived.toString());
+        const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
+        const bps =  round((bytesReceived - previousBytes) / (timeStamp - previousTime));
+        previousBytes = bytesReceived;
+        previousTime = timeStamp;
+        statBytes.setText(bps.toString());
       }
     },
     trackPublication,
@@ -98,11 +117,11 @@ function renderTrackPublication(trackPublication : RemoteTrackPublication, conta
 }
 export type IRenderedRemoteParticipant = {
   container: HTMLElement;
-  updateStats: ({ trackSid, bytesReceived } : { trackSid: string, bytesReceived: number }) => void;
+  updateStats: ({ trackSid, bytesReceived, timestamp } : { trackSid: string, bytesReceived: number, timestamp: number }) => void;
   stopRendering: () => void;
 }
 
-export function renderParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) : IRenderedRemoteParticipant {
+export function renderRemoteParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) : IRenderedRemoteParticipant {
   container = createDiv(container, 'participantDiv', `participantContainer-${participant.identity}`);
   const name = createElement({ container, type: 'h3', classNames: ['participantName'] });
 
@@ -110,12 +129,12 @@ export function renderParticipant(participant: RemoteParticipant, container:HTML
   const participantMedia = createDiv(container, 'participantMediaDiv');
   const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {
-    const rendered = renderTrackPublication(publication, participantMedia, shouldAutoAttach());
+    const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
     renderedPublications.set(publication.trackSid, rendered);
   });
 
   participant.on('trackPublished', publication => {
-    const rendered = renderTrackPublication(publication, participantMedia, shouldAutoAttach());
+    const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
     renderedPublications.set(publication.trackSid, rendered);
   });
   participant.on('trackUnpublished', publication => {
@@ -127,10 +146,10 @@ export function renderParticipant(participant: RemoteParticipant, container:HTML
   });
   return {
     container,
-    updateStats: ({ trackSid, bytesReceived } : { trackSid: string, bytesReceived: number }) => {
+    updateStats: ({ trackSid, bytesReceived, timestamp } : { trackSid: string, bytesReceived: number, timestamp: number }) => {
       renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
         if (trackSid === renderedTrackSid) {
-          renderedTrackpublication.setBytesReceived(bytesReceived);
+          renderedTrackpublication.setBytesReceived(bytesReceived, timestamp);
         }
       })
     },
@@ -277,12 +296,12 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   const renderedParticipants = new Map<Participant.SID, IRenderedRemoteParticipant>();
   const remoteParticipantsContainer = createDiv(container, 'remote-participants', 'remote-participants');
   room.participants.forEach(participant => {
-    renderedParticipants.set(participant.sid, renderParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
+    renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
   });
 
   // When a Participant joins the Room, log the event.
   room.on('participantConnected', participant => {
-    renderedParticipants.set(participant.sid, renderParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
+    renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
   });
 
   // When a Participant leaves the Room, detach its Tracks.
@@ -302,8 +321,8 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
         statReport.localVideoTrackStats,
       ].forEach(trackStatArr => {
         trackStatArr.forEach((trackStat: LocalAudioTrackStats | LocalVideoTrackStats) => {
-          const { trackId, trackSid, bytesSent } = trackStat;
-          updateTrackStats({ room, trackId, trackSid, bytesSent });
+          const { trackId, trackSid, bytesSent, timestamp } = trackStat;
+          updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp });
         })
       });
 
@@ -312,16 +331,16 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
         statReport.remoteAudioTrackStats,
       ].forEach(trackStatArr => {
         trackStatArr.forEach((trackStat: RemoteAudioTrackStats |RemoteVideoTrackStats) => {
-          const { trackId, trackSid } = trackStat;
+          const { trackSid, timestamp } = trackStat;
           const bytesReceived = trackStat.bytesReceived || 0;
           renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
-            renderedParticipant.updateStats({ trackSid, bytesReceived });
+            renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp });
           })
         })
       });
 
     })
-  }, 100);
+  }, 1000);
 
   // Once the LocalParticipant leaves the room, detach the Tracks
   // of all Participants, including that of the LocalParticipant.

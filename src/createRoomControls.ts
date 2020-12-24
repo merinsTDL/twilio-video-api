@@ -117,7 +117,7 @@ export function createRoomControls(
   tokenInput.value = urlParams.get('token') || serverUrl;
 
   // for working with dev env use: {"wsServer":"wss://us2.vss.dev.twilio.com/signaling"}
-  extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ logLevel: 'warn' });
+  extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ networkQuality: true });
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
   topologySelect.setValue(urlParams.get('topology') || 'group-small');
   // wsServer.value = urlParams.get('wsserver');
