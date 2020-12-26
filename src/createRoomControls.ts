@@ -12,6 +12,40 @@ import { log as log2 } from './components/log';
 import { Room, LocalTrack } from 'twilio-video';
 import log from 'logLevel';
 
+import jss from './jss'
+
+// Create your style.
+const style = {
+  roomControls: {
+    display: 'flex',
+    padding: '5px',
+    border: 'solid black 1px',
+    'flex-direction': 'column',
+    'flex-wrap': 'wrap',
+    'background-color': '#fff',
+  },
+  roomControlsInput: {
+    padding: '0.5em',
+    'text-align': 'center',
+  },
+  roomControlsLabel: {
+    'margin-top': '10px',
+    'margin-right': '10px',
+  },
+  roomControlsButton: {
+    'text-align': 'center'
+  },
+  controlOptions: {
+    display: 'flex',
+    'margin-top': '10px',
+    'justify-content': 'center',
+    'align-items': 'center',
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
+
 function handleSDKLogs(logger: log.Logger) {
   const originalFactory = logger.methodFactory;
   logger.methodFactory = function(methodName: string, level: log.LogLevelNumbers, loggerName: string) {
@@ -40,7 +74,7 @@ export function createRoomControls(
   roomJoined: (room: Room, logger: log.Logger, env?: string) => void
 ): IRoomControl {
   const urlParams = new URLSearchParams(window.location.search);
-  const roomControlsDiv = createDiv(container, 'room-controls', 'room-controls') as HTMLDivElement;
+  const roomControlsDiv = createDiv(container, sheet.classes.roomControls, 'room-controls') as HTMLDivElement;
 
   const twilioVideoVersion = createElement({ container: roomControlsDiv, type: 'h3', id: 'twilioVideoVersion' });
   twilioVideoVersion.innerHTML = 'Twilio-Video@' + Video.version;
@@ -69,9 +103,11 @@ export function createRoomControls(
     }
   });
 
+  const labelText = createLink({ container: roomControlsDiv, linkText: 'Token or ServerUrl', linkUrl: 'https://www.twilio.com/console/video/project/testing-tools', newTab: true });
+  labelText.classList.add(sheet.classes.roomControlsLabel);
   const tokenInput = createLabeledInput({
     container: roomControlsDiv,
-    labelText: createLink({ container: roomControlsDiv, linkText: 'Token or ServerUrl', linkUrl: 'https://www.twilio.com/console/video/project/testing-tools', newTab: true }),
+    labelText,
     placeHolder: 'Enter token or server url',
     labelClasses: ['tokenLabel'],
   });
@@ -80,26 +116,26 @@ export function createRoomControls(
     container: roomControlsDiv,
     labelText: 'Identity: ',
     placeHolder: 'Enter identity or random one will be generated',
-    labelClasses: ['identityLabel'],
+    labelClasses: [sheet.classes.roomControlsLabel],
   });
 
   const roomNameInput = createLabeledInput({
     container: roomControlsDiv,
     labelText: 'Room: ',
     placeHolder: 'Enter room name or random name will be generated',
-    labelClasses: ['roomNameLabel'],
+    labelClasses: [sheet.classes.roomControlsLabel],
   });
 
   extraConnectOptions = createLabeledInput({
     container: roomControlsDiv,
     labelText: 'ConnectOptions: ',
     placeHolder: 'connectOptions as json here',
-    labelClasses: ['connectOptionsLabel'],
+    labelClasses: [sheet.classes.roomControlsLabel],
     inputClasses: ['connectOptions'],
     inputType: 'textarea'
   });
 
-  const controlOptionsDiv = createDiv(roomControlsDiv, 'control-options', 'control-options');
+  const controlOptionsDiv = createDiv(roomControlsDiv, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
   const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });

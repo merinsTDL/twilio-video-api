@@ -1,9 +1,22 @@
 import { getAudioContext } from './getAudioContext';
 const FFT_SIZE = 512;
 
+import jss from '../jss'
+
+// Create your style.
+const style = {
+  background_gray: {
+    background: '#bbbbbb'
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
+
 export function waveform({ width = 200, height = 150, mediaStream }: { mediaStream: MediaStream, width?: number, height?: number }) {
   let stopped = false;
   const canvas = Object.assign(document.createElement('canvas'), { width, height });
+  canvas.classList.add(sheet.classes.background_gray);
 
   // To manipulate the canvas, we use its context. The canvas refers to the DOM element itself,
   // while the canvas refers to the underlying implementation which can be drawn to.

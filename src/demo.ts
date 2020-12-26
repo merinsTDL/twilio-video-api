@@ -12,16 +12,41 @@ import { createLocalTracksControls } from './createLocalTracksControls';
 import { createRoomControls } from './createRoomControls';
 import { renderRoom } from './renderRoom';
 import log from 'logLevel';
+import jss from './jss'
+
+// Create your style.
+const style = {
+  mainDiv: {
+    display: 'flex',
+    height: 'auto',
+    width: '100%',
+    border: 'solid red 1px',
+    padding: '2px',
+    'box-sizing': 'border-box',
+    'justify-content': 'flex-start',
+    'flex-wrap': 'wrap',
+    'background-color': '#fff',
+    'text-align': 'center',
+  },
+  localControls: {
+    display: 'flex',
+    width: '100%',
+    'background-color': '#fff',
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
 
 export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
   // create html
-  const mainDiv = createDiv(containerDiv, 'main', 'main');
+  const mainDiv = createDiv(containerDiv, sheet.classes.mainDiv, 'main');
   createLog(containerDiv);
   log2("Version: ", Video.version);
   log2("IsSupported: ", Video.isSupported);
   log2("UserAgent: ", navigator.userAgent);
 
-  const container = createCollapsibleDiv({ container: mainDiv, headerText: 'Local Controls', divClass: 'localControls' });
+  const container = createCollapsibleDiv({ container: mainDiv, headerText: 'Local Controls', divClass: sheet.classes.localControls });
 
   const localTracks: LocalTrack[] = [];
   const rooms: Room[] = [];

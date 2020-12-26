@@ -5,6 +5,26 @@ import { createLabeledStat } from './components/labeledstat';
 import { createTrackStats } from './createTrackStats';
 import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
 
+import jss from './jss'
+
+// Create your style.
+const style = {
+  background_yellow: {
+    background: 'yellow'
+  },
+  trackContainer: {
+    border: 'solid 1px black',
+    padding: '5px',
+    'max-width': '300px',
+  },
+  videoElement: {
+    'max-width': '100% !important',
+    'max-height': '80% !important'
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
 
 /**
  * Attach the AudioTrack to the HTMLAudioElement and start the Waveform.
@@ -23,6 +43,7 @@ export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
 
 export function attachVideoTrack(track: VideoTrack, container: HTMLElement) {
   const videoElement = track.attach();
+  videoElement.classList.add(sheet.classes.videoElement);
   container.appendChild(videoElement);
   return {
     mediaElement: videoElement,
@@ -38,8 +59,8 @@ export function renderTrack({ track, container, autoAttach } : {
 }) {
 
   // @ts-ignore
-  const trackContainerId = track.sid || track.id;
-  const trackContainer = createDiv(container, 'trackContainer', trackContainerId);
+  // const trackContainerId = track.sid || track.id;
+  const trackContainer = createDiv(container, sheet.classes.trackContainer);
   const { updateStats } = createTrackStats(track, trackContainer);
 
   const controlContainer = createDiv(trackContainer, 'trackControls');
@@ -65,8 +86,15 @@ export function renderTrack({ track, container, autoAttach } : {
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
       createButton('update', mediaControls, () => updateMediaElementState());
-      const isPlaying = createLabeledStat({ container: mediaControls, label: 'playing', className: 'enabled', useValueToStyle: true });
-      const volume = createLabeledStat({ container: mediaControls, label: 'volume', className: 'bytes', useValueToStyle: true });
+      const isPlaying = createLabeledStat({
+        container: mediaControls,
+        label: 'playing',
+        valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
+      });
+      const volume = createLabeledStat({
+        container: mediaControls,
+        label: 'volume'
+      });
       // eslint-disable-next-line no-inner-declarations
       const updateMediaElementState = () => {
         isPlaying.setText(`${!audioVideoElement?.paused}`);

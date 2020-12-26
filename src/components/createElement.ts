@@ -1,8 +1,9 @@
-export function createElement({ container, type, id, classNames }: {
+export function createElement({ container, type, id, classNames, style }: {
   container: HTMLElement,
   type: string,
   id?: string
-  classNames?: string[]
+  classNames?: string[],
+  style?: string
 }): HTMLElement {
   const el = document.createElement(type);
   if (id) {
@@ -10,6 +11,10 @@ export function createElement({ container, type, id, classNames }: {
   }
   if (classNames) {
     el.classList.add(...classNames);
+  }
+
+  if (style) {
+    el.setAttribute('style', style);
   }
 
   container.appendChild(el);

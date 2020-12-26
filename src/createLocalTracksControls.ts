@@ -9,6 +9,25 @@ import { getDeviceSelectionOptions } from './getDeviceSelectionOptions';
 import { renderLocalTrack } from './renderLocalTrack';
 import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
 
+import jss from './jss'
+
+// Create your style.
+const style = {
+  localTracksDiv: {
+    width: 'inherit',
+  },
+  trackRenders: {
+    display: 'flex',
+    'flex-wrap': 'wrap',
+  },
+  trackButtonsContainer: {
+    'text-align': 'left',
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
+
 export function createLocalTracksControls({ container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
   container: HTMLElement,
   rooms: Room[],
@@ -17,14 +36,14 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean
 }) {
-  container = createDiv(container, 'localTracks');
+  container = createDiv(container, sheet.classes.localTracksDiv);
 
   let number = 0;
   const autoAudio = getBooleanUrlParam('autoAudio', false);
   const autoVideo = getBooleanUrlParam('autoVideo', false);
 
-  const localTrackButtonsContainer = createDiv(container, 'trackButtons');
-  const localTracksContainer = createDiv(container, 'trackRenders');
+  const localTrackButtonsContainer = createDiv(container, sheet.classes.trackButtonsContainer);
+  const localTracksContainer = createDiv(container, sheet.classes.trackRenders);
 
   const renderedTracks = new Map();
   function renderLocalTrack2(track: LocalAudioTrack | LocalVideoTrack, videoDevices: MediaDeviceInfo[] = []) {

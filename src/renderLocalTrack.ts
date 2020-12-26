@@ -7,6 +7,33 @@ import { log } from './components/log';
 import { renderTrack } from './renderTrack';
 import { Room, LocalAudioTrack, LocalVideoTrack, Track, TrackPublication, LocalTrackPublication } from 'twilio-video';
 
+import jss from './jss'
+
+// Create your style.
+const style = {
+  background_gray: {
+    background: 'gray',
+  },
+  background_green: {
+    background: 'lightgreen',
+  },
+  localTrackControls: {
+    /* since it attaches to track container */
+    /* does not need top border */
+    'border-bottom': 'solid 1px black',
+    'border-left': 'solid 1px black',
+    'border-right': 'solid 1px black',
+  },
+  localTrackContainer: {
+    padding: '5px',
+    'max-width': '300px',
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
+
+
 const publishControls = new Map<Track.SID, Map<Room, IPublishControl>>();
 export function updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp } : {
   room: Room,
@@ -33,7 +60,7 @@ type IPublishControl = {
 
 // creates buttons to publish unpublish track in a given room.
 function createRoomPublishControls(container: HTMLElement, room: Room, track: LocalAudioTrack | LocalVideoTrack, shouldAutoPublish: boolean): IPublishControl {
-  container = createDiv(container, 'localTrackControls');
+  container = createDiv(container, sheet.classes.localTrackControls, 'localTrackControls');
   const roomSid = createElement({ container, type: 'h8', classNames: ['roomHeader'] });
 
   roomSid.innerHTML = room.localParticipant.identity;
@@ -64,8 +91,16 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     publishBtn.enable();
   });
 
-  statBytes = createLabeledStat({ container, label: 'sent (kbps)', className: 'bytes', useValueToStyle: true });
-  priority = createLabeledStat({ container, label: 'publish priority', className: 'priority', useValueToStyle: true });
+  statBytes = createLabeledStat({
+    container,
+    label: 'sent (kbps)',
+    valueMapper: (text: string) => text === '0' ? sheet.classes.background_gray : sheet.classes.background_green
+  });
+
+  priority = createLabeledStat({
+    container,
+    label: 'publish priority'
+  });
   unPublishBtn = createButton('unpublish', container, () => {
     if (trackPublication) {
       trackPublication.unpublish();
@@ -111,10 +146,10 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   onClosed: () => void,
   videoDevices: MediaDeviceInfo[]
 }) {
-  const localTrackContainer = createDiv(container, 'localTrackContainer');
+  const localTrackContainer = createDiv(container, sheet.classes.localTrackContainer);
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
-  const localTrackControls = createDiv(localTrackContainer, 'localTrackControls');
+  const localTrackControls = createDiv(localTrackContainer, sheet.classes.localTrackControls);
   createButton('disable', localTrackControls, () => track.disable());
   createButton('enable', localTrackControls, () => track.enable());
   createButton('stop', localTrackControls, () => {

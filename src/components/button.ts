@@ -7,8 +7,22 @@ export interface IButton {
   disable: () => void;
 };
 
+import jss from '../jss'
+
+// Create your style.
+const style = {
+  button: {
+    height: '2em',
+    margin: '5px',
+  },
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
+
 export function createButton(text: string, container: HTMLElement, onClick: () => void): IButton {
   const btn = document.createElement('button') as HTMLButtonElement;
+  btn.classList.add(sheet.classes.button);
   btn.innerHTML = text;
   btn.onclick = onClick;
   container.appendChild(btn);

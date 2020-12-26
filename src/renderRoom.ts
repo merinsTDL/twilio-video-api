@@ -27,7 +27,67 @@ import {
   Track,
   Participant
 } from 'twilio-video';
+import { createHeader } from './createHeader';
+
 import log from 'logLevel';
+
+import jss from './jss'
+
+// Create your style.
+const style = {
+  background_gray: {
+    background: 'gray',
+  },
+  background_yellow: {
+    background: 'yellow',
+  },
+  background_green: {
+    background: 'lightgreen',
+  },
+  background_red: {
+    background: 'red',
+  },
+  remoteParticipants: {
+    display: 'flex',
+    height: 'auto',
+    margin: 'auto',
+    width: '100%',
+    'justify-content': 'flex-start',
+    'flex-wrap': 'wrap',
+    'background-color': '#fff',
+    'text-align': 'center',
+  },
+  roomContainer: {
+    display: 'flex',
+    margin: '5px',
+    'flex-direction': 'column',
+    border: 'solid black 1px',
+  },
+  remoteTrackControls: {
+    /* since it attaches to track container */
+    /* does not need top border */
+    'border-bottom': 'solid 1px black',
+    'border-left': 'solid 1px black',
+    'border-right': 'solid 1px black',
+  },
+  participantDiv: {
+    margin: '2px',
+  },
+  participantMediaDiv: {
+    padding: '5px',
+    display: 'flex',
+    'flex-wrap': 'wrap'
+  },
+  roomHeaderDiv: {
+    display: 'flex'
+  },
+  publication: {
+    padding: '5px'
+  }
+}
+// Compile styles, apply plugins.
+const sheet = jss.createStyleSheet(style)
+sheet.attach();
 
 export type IRenderedRemoteTrackPublication = {
   setBytesReceived: (bytesReceived: number, timestamp: number) => void;
@@ -38,9 +98,9 @@ export type IRenderedRemoteTrackPublication = {
 
 function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
-  container = createDiv(container, 'publication', trackContainerId);
-  const trackSid = createElement({ container, type: 'h6', classNames: ['participantSid'] });
-  trackSid.innerHTML = `${trackPublication.kind}:${trackPublication.trackSid}`;
+  container = createDiv(container, sheet.classes.publication, trackContainerId);
+
+  const trackSid = createHeader({ container, text: `${trackPublication.kind}:${trackPublication.trackSid}` });
 
   let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
   let statBytes: ILabeledStat;
@@ -61,13 +121,17 @@ function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication,
         container,
         autoAttach
       });
-      const trackBytesDiv = createDiv(container, 'remoteTrackControls');
-      statBytes = createLabeledStat({ container: trackBytesDiv, label: 'received kbps', className: 'bytes', useValueToStyle: false });
+      const trackBytesDiv = createDiv(container, sheet.classes.remoteTrackControls, 'remoteTrackControls');
+      statBytes = createLabeledStat({
+        container: trackBytesDiv,
+        label: 'received kbps',
+        valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
+      });
       statBytes.setText('0');
-      priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority', className: 'priority', useValueToStyle: false });
+      priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority'});
       priority.setText(`${track.priority}`);
 
-      publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority', className: 'priority', useValueToStyle: false });
+      publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority' });
       publisherPriority.setText(`${trackPublication.publishPriority}`);
       trackPublication.on('publishPriorityChanged', () => {
         publisherPriority.setText(`${trackPublication.publishPriority}`);
@@ -122,11 +186,10 @@ export type IRenderedRemoteParticipant = {
 }
 
 export function renderRemoteParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) : IRenderedRemoteParticipant {
-  container = createDiv(container, 'participantDiv', `participantContainer-${participant.identity}`);
-  const name = createElement({ container, type: 'h3', classNames: ['participantName'] });
+  container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
 
-  name.innerHTML = participant.identity;
-  const participantMedia = createDiv(container, 'participantMediaDiv');
+  const participantName  = createHeader({ container, text: participant.identity });
+  const participantMedia = createDiv(container, sheet.classes.participantMediaDiv);
   const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {
     const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
@@ -229,7 +292,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   env?: string,
   logger: log.Logger
 }) {
-  container = createDiv(container, 'room-container');
+  container = createDiv(container, sheet.classes.roomContainer);
   console.log(logger.levels);
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);
@@ -244,18 +307,54 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
       logger.setLevel(logLevelSelect.getValue() as log.LogLevelDesc);
     }
   });
+
   logLevelSelect.setValue(currentLevel);
 
-  const roomHeaderDiv = createDiv(container, 'roomHeaderDiv');
-
-  const roomSid = createElement({ container: roomHeaderDiv, type: 'h3', classNames: ['roomHeaderText'] });
-  roomSid.innerHTML = ` ${room.sid} `;
+  const roomHeaderDiv = createDiv(container, sheet.classes.roomHeaderDiv);
+  const roomSid = createHeader( { container: roomHeaderDiv, text: `${room.sid}`});
   await createRoomButtons({ env, room, container  });
-  const localParticipant = createLabeledStat({ container, label: 'localParticipant', className: 'localParticipant', useValueToStyle: true });
+  const localParticipant = createLabeledStat({ container, label: 'localParticipant' });
   localParticipant.setText(room.localParticipant.identity);
-  const roomState = createLabeledStat({ container, label: 'room.state', className: 'roomstate', useValueToStyle: true });
-  const recording = createLabeledStat({ container, label: 'room.isRecording', className: 'recording', useValueToStyle: true });
-  const networkQuality = createLabeledStat({ container, label: 'room.localParticipant.networkQualityLevel', className: 'networkquality', useValueToStyle: true });
+  const roomState = createLabeledStat({
+    container,
+    label: 'room.state',
+    valueMapper: (text: string) => {
+      switch(text) {
+        case 'connected': return sheet.classes.background_green;
+        case 'reconnecting': return sheet.classes.background_yellow;
+        case 'disconnected': return sheet.classes.background_red;
+        default:
+          return sheet.classes.background_red;
+      }
+   }
+  });
+  const recording = createLabeledStat({
+    container,
+    label: 'room.isRecording',
+    valueMapper: (text: string) => text === 'true' ? sheet.classes.background_red : undefined
+  });
+
+  const networkQuality = createLabeledStat({
+    container,
+    label: 'room.localParticipant.networkQualityLevel',
+    valueMapper: (text: string) => {
+      switch(text) {
+        case 'null':
+          return sheet.classes.background_gray;
+        case '0':
+        case '1':
+          return sheet.classes.background_red;
+        case '2':
+        case '3':
+            return sheet.classes.background_yellow;
+        case '4':
+        case '5':
+          return sheet.classes.background_green;
+        default:
+          return sheet.classes.background_red;
+      }
+    }
+  });
 
   const updateNetworkQuality = () => {
     console.log('room.localParticipant.networkQualityLevel: ', room.localParticipant.networkQualityLevel);
@@ -294,7 +393,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   btnDisconnect.show(!isDisconnected);
 
   const renderedParticipants = new Map<Participant.SID, IRenderedRemoteParticipant>();
-  const remoteParticipantsContainer = createDiv(container, 'remote-participants', 'remote-participants');
+  const remoteParticipantsContainer = createDiv(container, sheet.classes.remoteParticipants, 'remote-participants');
   room.participants.forEach(participant => {
     renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
   });

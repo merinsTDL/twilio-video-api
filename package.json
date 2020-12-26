@@ -37,6 +37,8 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
+    "jss": "^10.5.0",
+    "jss-preset-default": "^10.5.0",
     "style-loader": "^2.0.0",
     "twilio-video": "file:../../work/twilio-video.js"
   }
