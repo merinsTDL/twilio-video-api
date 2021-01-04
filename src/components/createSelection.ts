@@ -1,9 +1,10 @@
 
-export function createSelection({ id, container, options = ['dog', 'cat', 'parrot', 'rabbit'], title = 'Pets', onChange = () => { } }: {
+export function createSelection({ id, container, options = ['dog', 'cat', 'parrot', 'rabbit'], title = 'Pets', labelClasses = [], onChange = () => { } }: {
   id?: string,
   container: HTMLElement,
   options: string[],
   title: string,
+  labelClasses?: string[],
   onChange: () => void;
 }) {
   const select = document.createElement('select');
@@ -21,6 +22,7 @@ export function createSelection({ id, container, options = ['dog', 'cat', 'parro
   const label = document.createElement('label');
   label.innerHTML = title;
   label.htmlFor = select.id;
+  label.classList.add(...labelClasses);
 
   select.addEventListener('change', onChange);
 

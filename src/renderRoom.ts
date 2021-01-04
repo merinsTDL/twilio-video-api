@@ -100,13 +100,12 @@ function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication,
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
   container = createDiv(container, sheet.classes.publication, trackContainerId);
 
-  const trackSid = createHeader({ container, text: `${trackPublication.kind}:${trackPublication.trackSid}` });
+  const trackSid = createHeader({ container, type: 'h6', text: `${trackPublication.kind}:${trackPublication.trackSid}` });
 
   let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
   let statBytes: ILabeledStat;
   let priority: ILabeledStat;
   let publisherPriority: ILabeledStat;
-
 
   function canRenderTrack(track: any): track is LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack {
     return track;
@@ -226,7 +225,7 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
   };
 }
 
-async function createRoomButtons({ room, container, env }: { room: Room, container: HTMLElement, env: string }) {
+async function renderExtraRoomInformation({ room, container, env }: { room: Room, container: HTMLElement, env: string }) {
   let credentialsAt;
   let creds: { signingKeySid: any; signingKeySecret: any; };
   try {
@@ -285,10 +284,11 @@ function getCurrentLoggerLevelAsString(logger: log.Logger): string {
   return currentLevelStr;
 }
 
-export async function renderRoom({ room, container, shouldAutoAttach, env = 'prod', logger }: {
+export async function renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, env = 'prod', logger }: {
   room: Room,
   container: HTMLElement,
   shouldAutoAttach: () => boolean,
+  renderExtraInfo: () => boolean,
   env?: string,
   logger: log.Logger
 }) {
@@ -310,11 +310,14 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
 
   logLevelSelect.setValue(currentLevel);
 
-  const roomHeaderDiv = createDiv(container, sheet.classes.roomHeaderDiv);
-  const roomSid = createHeader( { container: roomHeaderDiv, text: `${room.sid}`});
-  await createRoomButtons({ env, room, container  });
-  const localParticipant = createLabeledStat({ container, label: 'localParticipant' });
-  localParticipant.setText(room.localParticipant.identity);
+  const roomSid = createHeader( { container, text: `${room.localParticipant.identity} in ${room.sid}`});
+  const btnDisconnect = createButton('disconnect', container, () => {
+    room.disconnect();
+    container.remove();
+  });
+  if (renderExtraInfo()) {
+    await renderExtraRoomInformation({ env, room, container  });
+  }
   const roomState = createLabeledStat({
     container,
     label: 'room.state',
@@ -381,10 +384,6 @@ export async function renderRoom({ room, container, shouldAutoAttach, env = 'pro
   updateNetworkQuality();
 
   const isDisconnected = room.state === 'disconnected';
-  const btnDisconnect = createButton('disconnect', roomHeaderDiv, () => {
-    room.disconnect();
-    container.remove();
-  });
 
   // When we are about to transition away from this page, disconnect
   // from the room, if joined.

@@ -1,26 +1,24 @@
 # twilio-video-api
 
-This project is hosted @ https://makarandp0.github.io/twilio-video-api/
-
-This app demonstrates usage of twilio-video sdk. The purpose is to be able to quickly test the api.
+This app demonstrates usage of twilio-video sdk. The purpose is to be able to quickly test the api. It allows you to connect multiple participants to  twilio-video room, and publish media.
 
 # Setup
-- Step 1: clone the repo (https://github.com/makarandp0/twilio-video-api.git)
+- Step 1: clone the repo
 
 ```
 git clone https://github.com/makarandp0/twilio-video-api.git
 
 ```
 
-- Step 2: install the dependencies.
+- Step 2: install dependencies.
 
 ```
 cd twilio-video-api
 npm install
 ```
 
-- Step 3: store your twilio credentials in `twilio_credentials.json`
-You can find your credentials at [twilio console](https://www.twilio.com/console/project/settings)
+- Step 3: update twilio credentials
+create and update `twilio_credentials.json`. You can find your credentials at [twilio console](https://www.twilio.com/console/project/settings)
 
 ```
 cp server/twilio_credentials.json_template server/twilio_credentials.json
@@ -28,6 +26,7 @@ cp server/twilio_credentials.json_template server/twilio_credentials.json
 ```
 
 - Step 4: start server
+
 This server is used by the webpage to generate token to join a room.
 ```
 node server
@@ -56,11 +55,11 @@ app supports various url parameters
 | autoPublish   | if not false app publishes tracks as they are created  | `true`   |
 | autoVideo     | if specified app creates local video track at startup  |  `false`  |
 | autoAudio     | if specified app creates local audio track at startup  |  `false`  |
+| extraInfo     | if specified app renders links to room properties      |  `false`  |
 | topology      | type of room to use  |  `group-small`  |
 | env           | backend environment to use  |  `prod`  |
-| connectOptions| additional connect options to use  | `{"logLevel":"debug"}`   |
-| token         | token  |  not specified  |
-| server        | server to use to acquire token and credentials |  `http://localhost:3000`  |
+| connectOptions| additional connect options to use  | `{"networkQuality":true}`   |
+| server        | server to use to acquire token to join video room |  `http://localhost:3000`  |
 
 
 when navigated to
@@ -70,4 +69,4 @@ The page will join room `foo` with `mak` as local identity and publish a video a
 
 
 # Online demo
-To join the room you would need to specify `token` or `Server` parameter where the server is running.
+This app is hosted at https://makarandp0.github.io/twilio-video-api/. It requires that you run your token server on localhost port 3000 or pass `Server` parameter pointing to where the server is running.

@@ -103,6 +103,7 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
       createButton(device.label, localTrackButtonsContainer, async () => {
         const videoConstraints = {
           deviceId: { exact: device.deviceId },
+          // height: 480, width: 640, frameRate: 24
         };
         const thisTrackName = 'camera-' + number++;
         const localTrack = await Video.createLocalVideoTrack({ logLevel: 'warn', name: thisTrackName, ...videoConstraints });

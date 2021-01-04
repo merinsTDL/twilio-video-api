@@ -65,6 +65,7 @@ function handleSDKLogs(logger: log.Logger) {
 export interface IRoomControl {
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean,
+  renderExtraInfo: () => boolean,
 };
 
 export function createRoomControls(
@@ -84,6 +85,7 @@ export function createRoomControls(
     container: roomControlsDiv,
     options: ['group-small', 'peer-to-peer', 'group', 'go'],
     title: 'topology',
+    labelClasses: [sheet.classes.roomControlsLabel],
     onChange: () => log2('topology change:', topologySelect.getValue())
   });
 
@@ -93,6 +95,7 @@ export function createRoomControls(
     container: roomControlsDiv,
     options: ['dev', 'stage', 'prod'],
     title: 'env',
+    labelClasses: [sheet.classes.roomControlsLabel],
     onChange: () => {
       const newEnv = envSelect.getValue();
       if (newEnv === 'dev') {
@@ -105,11 +108,12 @@ export function createRoomControls(
 
   const labelText = createLink({ container: roomControlsDiv, linkText: 'Token or ServerUrl', linkUrl: 'https://www.twilio.com/console/video/project/testing-tools', newTab: true });
   labelText.classList.add(sheet.classes.roomControlsLabel);
-  const tokenInput = createLabeledInput({
+  const tokenServerUrlInput = createLabeledInput({
     container: roomControlsDiv,
     labelText,
-    placeHolder: 'Enter token or server url',
-    labelClasses: ['tokenLabel'],
+    placeHolder: 'Enter server url',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
   });
 
   const localIdentity = createLabeledInput({
@@ -117,6 +121,7 @@ export function createRoomControls(
     labelText: 'Identity: ',
     placeHolder: 'Enter identity or random one will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
   });
 
   const roomNameInput = createLabeledInput({
@@ -124,6 +129,7 @@ export function createRoomControls(
     labelText: 'Room: ',
     placeHolder: 'Enter room name or random name will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
   });
 
   extraConnectOptions = createLabeledInput({
@@ -131,7 +137,6 @@ export function createRoomControls(
     labelText: 'ConnectOptions: ',
     placeHolder: 'connectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: ['connectOptions'],
     inputType: 'textarea'
   });
 
@@ -142,25 +147,29 @@ export function createRoomControls(
   const autoAttach = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Attach', id: 'autoAttach' });
   const autoJoin = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Join', id: 'autoJoin' });
   const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Record Participant', id: 'recordParticipant' });
+  const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extra Info', id: 'extraInfo' });
 
   // process parameters.
 
   roomNameInput.value = urlParams.get('room') || randomRoomName();
   localIdentity.value = urlParams.get('identity') || randomName();
-  const { protocol, host, pathname } = window.location;
-  console.log({ protocol, host, pathname });
-  const serverUrl = urlParams.get('server') || 'http://localhost:3000';
-  tokenInput.value = urlParams.get('token') || serverUrl;
+  tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
 
+
+  // const defaultOptions = { networkQuality: true };
   // for working with dev env use: {"wsServer":"wss://us2.vss.dev.twilio.com/signaling"}
-  extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ networkQuality: true });
+  // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
+  // for simulcast
+  const defaultOptions = { networkQuality:true, preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
+
+  extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions);
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
   topologySelect.setValue(urlParams.get('topology') || 'group-small');
-  // wsServer.value = urlParams.get('wsserver');
   envSelect.setValue(urlParams.get('env') || 'prod');
   autoAttach.checked = getBooleanUrlParam('autoAttach', true);
   autoPublish.checked = getBooleanUrlParam('autoPublish', true);
   autoRecord.checked = getBooleanUrlParam('record', false);
+  extraInfo.checked = getBooleanUrlParam('extraInfo', false);
 
   /**
    * Get the Room credentials from the server.
@@ -170,33 +179,27 @@ export function createRoomControls(
 
   async function getRoomCredentials() {
     const identity = localIdentity.value || randomName();
-    let token = tokenInput.value;
+    let tokenServerUrl = tokenServerUrlInput.value;
+    const topology = topologySelect.getValue();
+    const environment = envSelect.getValue();
+    const roomName = roomNameInput.value;
+    const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
 
-    // if token input is server url
-    if (token.indexOf('http') >= 0) {
-      let tokenUrl = token;
-      const topology = topologySelect.getValue();
-      const environment = envSelect.getValue();
-      const roomName = roomNameInput.value;
-      const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
+    let url = new URL(tokenServerUrl + '/token');
 
-      let url = new URL(tokenUrl + '/token');
-
-      console.log('Getting Token For: ', { environment, topology, roomName, identity, recordParticipantsOnConnect });
-      const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect };
-      url.search = (new URLSearchParams(tokenOptions)).toString();
+    console.log('Getting Token For: ', { environment, topology, roomName, identity, recordParticipantsOnConnect });
+    const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect };
+    url.search = (new URLSearchParams(tokenOptions)).toString();
+    try {
       const response = await fetch(url.toString());
       if (response.ok) {
         return response.json();
       }
       throw new Error(`Failed to obtain token from ${url}, Status: ${response.status}`);
-    } else if (token.length === 0) {
-      throw new Error('Must specify token or tokenUrl');
+    } catch (ex) {
+      throw new Error(`Error fetching token ${url}, ${ex.message}`);
     }
-
-    return { token, identity };
   }
-
 
   function joinRoom(token: string) {
     const roomName = roomNameInput.value;
@@ -300,7 +303,8 @@ export function createRoomControls(
   return {
     // TODO: also add getServerUrl
     shouldAutoAttach: () => autoAttach.checked,
-    shouldAutoPublish: () => autoPublish.checked
+    shouldAutoPublish: () => autoPublish.checked,
+    renderExtraInfo: () => extraInfo.checked
   };
 }
 
