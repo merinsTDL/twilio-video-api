@@ -225,11 +225,17 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
   };
 }
 
-async function renderExtraRoomInformation({ room, container, env }: { room: Room, container: HTMLElement, env: string }) {
+async function renderExtraRoomInformation({ room, container, env, getServerUrl }:
+  {
+    room: Room,
+    container: HTMLElement,
+    env: string,
+    getServerUrl: () => string,
+  }) {
   let credentialsAt;
   let creds: { signingKeySid: any; signingKeySecret: any; };
   try {
-    creds = await getCreds(env);
+    creds = await getCreds(env, getServerUrl());
     credentialsAt = `${creds.signingKeySid}:${creds.signingKeySecret}@`;
   } catch (e) {
     log2('failed to load credentials: ', e);
@@ -284,11 +290,12 @@ function getCurrentLoggerLevelAsString(logger: log.Logger): string {
   return currentLevelStr;
 }
 
-export async function renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, env = 'prod', logger }: {
+export async function renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env = 'prod', logger }: {
   room: Room,
   container: HTMLElement,
   shouldAutoAttach: () => boolean,
   renderExtraInfo: () => boolean,
+  getServerUrl: () => string,
   env?: string,
   logger: log.Logger
 }) {
@@ -316,7 +323,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
     container.remove();
   });
   if (renderExtraInfo()) {
-    await renderExtraRoomInformation({ env, room, container  });
+    await renderExtraRoomInformation({ env, room, container, getServerUrl  });
   }
   const roomState = createLabeledStat({
     container,

@@ -66,6 +66,7 @@ export interface IRoomControl {
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean,
   renderExtraInfo: () => boolean,
+  getServerUrl: () => string,
 };
 
 export function createRoomControls(
@@ -301,10 +302,10 @@ export function createRoomControls(
     });
   }
   return {
-    // TODO: also add getServerUrl
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked,
-    renderExtraInfo: () => extraInfo.checked
+    renderExtraInfo: () => extraInfo.checked,
+    getServerUrl: () => tokenServerUrlInput.value
   };
 }
 

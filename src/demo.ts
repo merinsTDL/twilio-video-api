@@ -53,7 +53,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
 
   // @ts-ignore
   window.Twilio = { Video, rooms };
-  const  { shouldAutoAttach, shouldAutoPublish, renderExtraInfo } = createRoomControls(
+  const  { shouldAutoAttach, shouldAutoPublish, renderExtraInfo, getServerUrl } = createRoomControls(
     container,
     Video,
     localTracks,
@@ -75,7 +75,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     rooms.push(room);
     roomAdded(room);
     log2(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
-    renderRoom({ room, container: mainDiv, shouldAutoAttach, renderExtraInfo, env, logger });
+    renderRoom({ room, container: mainDiv, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger });
     room.on('disconnected', (_, err) => {
       log2(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {
