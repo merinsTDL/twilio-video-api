@@ -69,4 +69,4 @@ The page will join room `foo` with `mak` as local identity and publish a video a
 
 
 # Online demo
-This app is hosted at https://makarandp0.github.io/twilio-video-api/. It requires that you run your token server on localhost port 3000 or pass `Server` parameter pointing to where the server is running.
+This app is hosted at https://makarandp0.github.io/twilio-video-api/. It requires that you run your [token server](https://github.com/makarandp0/twilio-video-api/tree/main/server) on localhost port 3000 or pass `Server` parameter pointing to where the server is running.

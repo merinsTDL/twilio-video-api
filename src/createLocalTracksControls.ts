@@ -6,10 +6,12 @@ import { syntheticVideo }  from './components/syntheticvideo';
 
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { getDeviceSelectionOptions } from './getDeviceSelectionOptions';
-import { renderLocalTrack } from './renderLocalTrack';
-import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
+import { IRenderedLocalTrack, renderLocalTrack } from './renderLocalTrack';
+import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack, Track } from 'twilio-video';
 
 import jss from './jss'
+
+type localTrack = LocalAudioTrack | LocalVideoTrack;
 
 // Create your style.
 const style = {
@@ -45,7 +47,7 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
   const localTrackButtonsContainer = createDiv(container, sheet.classes.trackButtonsContainer);
   const localTracksContainer = createDiv(container, sheet.classes.trackRenders);
 
-  const renderedTracks = new Map();
+  const renderedTracks = new Map<LocalTrack, IRenderedLocalTrack>();
   function renderLocalTrack2(track: LocalAudioTrack | LocalVideoTrack, videoDevices: MediaDeviceInfo[] = []) {
     localTracks.push(track);
     renderedTracks.set(track, renderLocalTrack({
@@ -122,10 +124,10 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
 
   return {
     roomAdded: (room: Room)  => {
-      Array.from(renderedTracks.values()).forEach(renderedTrack => renderedTrack.roomAdded(room));
+      renderedTracks.forEach((renderedTrack => renderedTrack.roomAdded(room)));
     },
     roomRemoved: (room: Room) => {
-      Array.from(renderedTracks.values()).forEach(renderedTrack => renderedTrack.roomRemoved(room));
+      renderedTracks.forEach((renderedTrack => renderedTrack.roomRemoved(room)));
     },
   };
 }

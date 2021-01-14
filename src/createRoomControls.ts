@@ -56,7 +56,7 @@ function handleSDKLogs(logger: log.Logger) {
       // emitted on (now deprecated) eventListener
       // they are fired with message = `event`, and group == `signaling`
       if (message === 'event' && data.group === 'signaling') {
-        console.log(`makarand EventListenerAPI | ${data.name}`);
+        // console.log(`makarand EventListenerAPI | ${data.name}`);
       }
     };
   };
@@ -73,7 +73,7 @@ export function createRoomControls(
   container: HTMLElement,
   Video: typeof import('twilio-video'),
   localTracks: LocalTrack[],
-  roomJoined: (room: Room, logger: log.Logger, env?: string) => void
+  roomJoined: (room: Room, logger: log.Logger, env: string) => void
 ): IRoomControl {
   const urlParams = new URLSearchParams(window.location.search);
   const roomControlsDiv = createDiv(container, sheet.classes.roomControls, 'room-controls') as HTMLDivElement;
@@ -107,7 +107,9 @@ export function createRoomControls(
     }
   });
 
-  const labelText = createLink({ container: roomControlsDiv, linkText: 'Token or ServerUrl', linkUrl: 'https://www.twilio.com/console/video/project/testing-tools', newTab: true });
+  //
+  // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
+  const labelText = createLink({ container: roomControlsDiv, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
   labelText.classList.add(sheet.classes.roomControlsLabel);
   const tokenServerUrlInput = createLabeledInput({
     container: roomControlsDiv,
@@ -157,28 +159,21 @@ export function createRoomControls(
   tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
 
 
-  // const defaultOptions = { networkQuality: true };
-  // for working with dev env use: {"wsServer":"wss://us2.vss.dev.twilio.com/signaling"}
+  // for working with dev env use:
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
-  // for simulcast
-  const defaultOptions = { networkQuality:true, preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
-
+  // for simulcast use:
+  // { preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
+  const defaultOptions = { networkQuality: true };
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions);
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
-  topologySelect.setValue(urlParams.get('topology') || 'group-small');
-  envSelect.setValue(urlParams.get('env') || 'prod');
   autoAttach.checked = getBooleanUrlParam('autoAttach', true);
   autoPublish.checked = getBooleanUrlParam('autoPublish', true);
   autoRecord.checked = getBooleanUrlParam('record', false);
   extraInfo.checked = getBooleanUrlParam('extraInfo', false);
+  topologySelect.setValue(urlParams.get('topology') || 'group-small');
+  envSelect.setValue(urlParams.get('env') || 'prod');
 
-  /**
-   * Get the Room credentials from the server.
-   * @param {string} [identity] identity to use, if not specified server generates random one.
-   * @returns {Promise<{identity: string, token: string}>}
-   */
-
-  async function getRoomCredentials() {
+  async function getRoomCredentials(): Promise<{token: string}> {
     const identity = localIdentity.value || randomName();
     let tokenServerUrl = tokenServerUrlInput.value;
     const topology = topologySelect.getValue();
@@ -259,16 +254,26 @@ export function createRoomControls(
     btnJoin.click();
   }
 
+
+  // @ts-ignore
+  // const runPreflight =  Video.runPreflight;
+
   // @ts-ignore
   const testPreflight = Video.testPreflight;
-  if (testPreflight === 'function') {
+  if (typeof testPreflight === 'function') {
     let preflightTest = null;
-    createButton('preparePreflight', roomControlsDiv, async () => {
+    createButton('prepare preflight', roomControlsDiv, async () => {
+      localIdentity.value = 'Alice';
       const aliceToken = (await getRoomCredentials()).token;
+      localIdentity.value = 'Bob';
       const bobToken = (await getRoomCredentials()).token;
-      createButton('testPreflight', roomControlsDiv, async () => {
-        console.log('starting preflight');
+      createButton('runPreflight', roomControlsDiv, async () => {
+        const logger = Video.Logger.getLogger('twilio-video');
+        logger.setLevel('DEBUG');
+        console.log('starting runPreflight');
         const environment = envSelect.getValue();
+
+        // preflightTest = runPreflight(aliceToken, { duration: 10000, environment, preferredVideoCodecs: [{codec:"VP8"}]});
         preflightTest = testPreflight(aliceToken, bobToken, { duration: 10000, environment });
         const deferred: { reject?: (e: Error) => void, resolve?: (report: any) => void, promise?: Promise<any> } = {};
         deferred.promise = new Promise((resolve, reject) => {
@@ -276,18 +281,17 @@ export function createRoomControls(
           deferred.reject = reject;
         });
 
-        const logger = Video.Logger.getLogger('twilio-video');
         preflightTest.on('debug', (room1: Room, room2: Room) => {
           console.log('preflight debug:', room1, room2);
-          roomJoined(room1, logger);
-          roomJoined(room2, logger);
+          roomJoined(room1, logger, envSelect.getValue());
+          roomJoined(room2, logger,  envSelect.getValue());
         });
 
         preflightTest.on('progress', (progress: string)  => {
           console.log('preflight progress:', progress);
         });
 
-        preflightTest.on('error', (error: Error) => {
+        preflightTest.on('failed', (error: Error) => {
           console.error('preflight error:', error);
           deferred.reject && deferred.reject(error);
         });
@@ -301,6 +305,7 @@ export function createRoomControls(
       });
     });
   }
+
   return {
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked,

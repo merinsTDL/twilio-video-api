@@ -136,6 +136,10 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
   };
 }
 
+export interface IRenderedLocalTrack {
+  roomAdded: (room: Room) => void;
+  roomRemoved: (room: Room) => void;
+}
 
 export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, onClosed, videoDevices = [] }: {
   rooms: Room[],
@@ -145,7 +149,7 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   autoPublish: boolean,
   onClosed: () => void,
   videoDevices: MediaDeviceInfo[]
-}) {
+}): IRenderedLocalTrack {
   const localTrackContainer = createDiv(container, sheet.classes.localTrackContainer);
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
@@ -200,7 +204,7 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
     }
   };
 
-  const closeBtn = createButton('close', localTrackControls, () => {
+  createButton('close', localTrackControls, () => {
     trackPublishControls.forEach((roomPublishControl: IPublishControl, room: Room) => {
       roomPublishControl.unPublishBtn.click();
       roomPublishControl.stopRendering();
@@ -213,7 +217,6 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   });
 
   return {
-    closeBtn,
     roomAdded,
     roomRemoved
   };

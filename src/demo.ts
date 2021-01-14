@@ -5,14 +5,14 @@
 'use strict';
 
 import { Room, Logger, LocalTrack, TwilioError} from 'twilio-video';
-import { createLog, log as log2} from './components/log';
+import { createLog, log } from './components/log';
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { createDiv } from './components/createDiv';
 import { createLocalTracksControls } from './createLocalTracksControls';
 import { createRoomControls } from './createRoomControls';
 import { renderRoom } from './renderRoom';
-import log from 'logLevel';
 import jss from './jss'
+import { createLink } from './components/createLink';
 
 // Create your style.
 const style = {
@@ -39,12 +39,15 @@ const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
 export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
+  // link to source code
+  createLink({ container: containerDiv, linkText: 'Twilio-Video-API-Demo', linkUrl: 'https://github.com/makarandp0/twilio-video-api', newTab: true });
+
   // create html
   const mainDiv = createDiv(containerDiv, sheet.classes.mainDiv, 'main');
   createLog(containerDiv);
-  log2("Version: ", Video.version);
-  log2("IsSupported: ", Video.isSupported);
-  log2("UserAgent: ", navigator.userAgent);
+  log("Version: ", Video.version);
+  log("IsSupported: ", Video.isSupported);
+  log("UserAgent: ", navigator.userAgent);
 
   const container = createCollapsibleDiv({ container: mainDiv, headerText: 'Local Controls', divClass: sheet.classes.localControls });
 
@@ -74,12 +77,12 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     logger = logger || Video.Logger.getLogger('twilio-video');
     rooms.push(room);
     roomAdded(room);
-    log2(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
+    log(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
     renderRoom({ room, container: mainDiv, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger });
     room.on('disconnected', (_, err) => {
-      log2(`Left ${room.sid} as "${room.localParticipant.identity}"`);
+      log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {
-        log2('Error:', err);
+        log('Error:', err);
       }
       const index = rooms.indexOf(room);
       if (index > -1) {

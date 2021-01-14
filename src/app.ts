@@ -2,10 +2,6 @@
 import Video from 'twilio-video';
 import { demo } from './demo';
 
-/* eslint-disable no-console */
-console.log('makarand: loaded src/app.ts');
-console.log('makarand: Video:', Video.isSupported);
-console.log('makarand: typeof Video:', typeof Video);
 demo(Video, document.body);
 
 
