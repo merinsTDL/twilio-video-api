@@ -44,12 +44,14 @@ function createAccessToken({ environment = 'prod', identity, roomName }) {
 
 async function createRoom({ environment = 'prod', topology, roomName, recordParticipantsOnConnect }) {
   const { accountSid, signingKeySid, signingKeySecret } = getCredentials(environment);
+  console.log('Using account: ', accountSid);
   const { video } = twilio(signingKeySid, signingKeySecret, {
     accountSid,
     region: environment === 'prod' ? null : environment
   });
 
   console.log('recordParticipantsOnConnect: ', recordParticipantsOnConnect);
+  // const maxParticipants = ;
   const result = await video.rooms.create({ type: topology, uniqueName: roomName, recordParticipantsOnConnect }).catch(error => {
     if (error.code !== 53113) {
       console.log('Error creating room: ', error);

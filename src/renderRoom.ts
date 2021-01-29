@@ -10,15 +10,13 @@ import { log as log2 } from './components/log';
 import { renderTrack } from './renderTrack';
 import { updateTrackStats } from './renderLocalTrack';
 import {
+  Log,
   Room,
-  LocalTrack,
   LocalAudioTrack,
   LocalVideoTrack,
   RemoteAudioTrack,
   RemoteVideoTrack,
-  TwilioError,
   RemoteParticipant,
-  TrackPublication,
   RemoteTrackPublication,
   LocalAudioTrackStats,
   LocalVideoTrackStats,
@@ -29,7 +27,6 @@ import {
 } from 'twilio-video';
 import { createHeader } from './createHeader';
 
-import log from 'logLevel';
 
 import jss from './jss'
 
@@ -278,7 +275,7 @@ async function renderExtraRoomInformation({ room, container, env, getServerUrl }
 }
 
 
-function getCurrentLoggerLevelAsString(logger: log.Logger): string {
+function getCurrentLoggerLevelAsString(logger: Log.Logger): string {
   const levelNumToString = new Map<number, string>() ;
   levelNumToString.set(logger.levels.TRACE, 'TRACE');
   levelNumToString.set(logger.levels.DEBUG, 'DEBUG');
@@ -297,7 +294,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   renderExtraInfo: () => boolean,
   getServerUrl: () => string,
   env?: string,
-  logger: log.Logger
+  logger: Log.Logger
 }) {
   container = createDiv(container, sheet.classes.roomContainer);
   console.log(logger.levels);
@@ -311,7 +308,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
     title: 'logLevel',
     onChange: () => {
       log2(`setting logLevel: ${logLevelSelect.getValue()} for ${room.localParticipant.identity} in ${room.sid}`);
-      logger.setLevel(logLevelSelect.getValue() as log.LogLevelDesc);
+      logger.setLevel(logLevelSelect.getValue() as Log.LogLevelDesc);
     }
   });
 

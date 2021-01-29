@@ -9,8 +9,7 @@ import { createLink } from './components/createLink';
 import { createSelection } from './components/createSelection';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { log as log2 } from './components/log';
-import { Room, LocalTrack } from 'twilio-video';
-import log from 'logLevel';
+import { Log, LocalTrack, Room, RemoteParticipant, RemoteTrack, RemoteTrackPublication } from 'twilio-video';
 
 import jss from './jss'
 
@@ -46,9 +45,9 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
-function handleSDKLogs(logger: log.Logger) {
+function handleSDKLogs(logger: Log.Logger) {
   const originalFactory = logger.methodFactory;
-  logger.methodFactory = function(methodName: string, level: log.LogLevelNumbers, loggerName: string) {
+  logger.methodFactory = function(methodName: string, level: Log.LogLevelNumbers, loggerName: string) {
     const method = originalFactory(methodName, level, loggerName);
     return function(dateTime: Date, logLevel: string, component: string, message: string, data: any) {
       method(dateTime, logLevel, component, message, data);
@@ -73,7 +72,7 @@ export function createRoomControls(
   container: HTMLElement,
   Video: typeof import('twilio-video'),
   localTracks: LocalTrack[],
-  roomJoined: (room: Room, logger: log.Logger, env: string) => void
+  roomJoined: (room: Room, logger: Log.Logger, env: string) => void
 ): IRoomControl {
   const urlParams = new URLSearchParams(window.location.search);
   const roomControlsDiv = createDiv(container, sheet.classes.roomControls, 'room-controls') as HTMLDivElement;
@@ -163,7 +162,7 @@ export function createRoomControls(
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
   // for simulcast use:
   // { preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
-  const defaultOptions = { networkQuality: true };
+  const defaultOptions = { networkQuality: { local: 3, remote: 0 } };
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions);
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
   autoAttach.checked = getBooleanUrlParam('autoAttach', true);
@@ -256,12 +255,12 @@ export function createRoomControls(
 
 
   // @ts-ignore
-  // const runPreflight =  Video.runPreflight;
+  const runPreflight =  Video.runPreflight;
 
   // @ts-ignore
   const testPreflight = Video.testPreflight;
-  if (typeof testPreflight === 'function') {
-    let preflightTest = null;
+  if (typeof runPreflight === 'function' || typeof testPreflight === 'function') {
+    let preflightTest: any = null;
     createButton('prepare preflight', roomControlsDiv, async () => {
       localIdentity.value = 'Alice';
       const aliceToken = (await getRoomCredentials()).token;
@@ -273,8 +272,13 @@ export function createRoomControls(
         console.log('starting runPreflight');
         const environment = envSelect.getValue();
 
-        // preflightTest = runPreflight(aliceToken, { duration: 10000, environment, preferredVideoCodecs: [{codec:"VP8"}]});
-        preflightTest = testPreflight(aliceToken, bobToken, { duration: 10000, environment });
+        // preflightTest = runPreflight(aliceToken, { duration: 100000, environment, preferredVideoCodecs: [{ codec:"VP8", simulcast: true }]});
+        // preflightTest = testPreflight(aliceToken, bobToken, { duration: 10000, environment });
+        if (runPreflight) {
+          preflightTest = runPreflight(aliceToken, { duration: 100000, environment });
+        } else {
+          preflightTest = testPreflight(aliceToken, { duration: 100000, environment });
+        }
         const deferred: { reject?: (e: Error) => void, resolve?: (report: any) => void, promise?: Promise<any> } = {};
         deferred.promise = new Promise((resolve, reject) => {
           deferred.resolve = resolve;
@@ -313,5 +317,4 @@ export function createRoomControls(
     getServerUrl: () => tokenServerUrlInput.value
   };
 }
-
 
