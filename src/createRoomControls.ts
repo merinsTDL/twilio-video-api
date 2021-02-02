@@ -142,6 +142,15 @@ export function createRoomControls(
     inputType: 'textarea'
   });
 
+  const maxParticipantsInput = createLabeledInput({
+    container: roomControlsDiv,
+    labelText: 'MaxParticipants: ',
+    placeHolder: 'optional (51+ makes large room)]',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
+  });
+
+
   const controlOptionsDiv = createDiv(roomControlsDiv, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
@@ -152,11 +161,10 @@ export function createRoomControls(
   const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extra Info', id: 'extraInfo' });
 
   // process parameters.
-
   roomNameInput.value = urlParams.get('room') || randomRoomName();
   localIdentity.value = urlParams.get('identity') || randomName();
   tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
-
+  maxParticipantsInput.value = urlParams.get('maxParticipants') || '';
 
   // for working with dev env use:
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
@@ -181,9 +189,10 @@ export function createRoomControls(
     const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
 
     let url = new URL(tokenServerUrl + '/token');
+    let maxParticipants = maxParticipantsInput.value;
 
-    console.log('Getting Token For: ', { environment, topology, roomName, identity, recordParticipantsOnConnect });
-    const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect };
+    const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect, maxParticipants };
+    console.log('Getting Token For: ', tokenOptions);
     url.search = (new URLSearchParams(tokenOptions)).toString();
     try {
       const response = await fetch(url.toString());

@@ -47,19 +47,20 @@ open http://localhost:8080/
 
 app supports various url parameters
 
-| parameter     | usage                                 | default  |
-| ------------- |:--------------------------------------|:--------|
-| room          | if specified used as the name of the room to join | auto generated |
-| identity      | if specified used as identity to join the room  | auto generated   |
-| autoJoin      | if true app joins specified room after page load  | `false`   |
-| autoPublish   | if not false app publishes tracks as they are created  | `true`   |
-| autoVideo     | if specified app creates local video track at startup  |  `false`  |
-| autoAudio     | if specified app creates local audio track at startup  |  `false`  |
-| extraInfo     | if specified app renders links to room properties      |  `false`  |
-| topology      | type of room to use  |  `group-small`  |
-| env           | backend environment to use  |  `prod`  |
-| connectOptions| additional connect options to use  | `{"networkQuality":true}`   |
-| server        | server to use to acquire token to join video room |  `http://localhost:3000`  |
+| parameter       | usage                                 | default  |
+| --------------- |:--------------------------------------|:--------|
+| room            | if specified used as the name of the room to join | auto generated |
+| identity        | if specified used as identity to join the room  | auto generated   |
+| autoJoin        | if true app joins specified room after page load  | `false`   |
+| autoPublish     | if not false app publishes tracks as they are created  | `true`   |
+| autoVideo       | if specified app creates local video track at startup  |  `false`  |
+| autoAudio       | if specified app creates local audio track at startup  |  `false`  |
+| extraInfo       | if specified app renders links to room properties      |  `false`  |
+| maxParticipants | if 51 or larger then large group room is created  |  ``  |
+| topology        | type of room to use  |  `group-small`  |
+| env             | backend environment to use  |  `prod`  |
+| connectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
+| server          | server to use to acquire token to join video room |  `http://localhost:3000`  |
 
 
 when navigated to
