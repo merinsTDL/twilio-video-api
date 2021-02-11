@@ -101,8 +101,6 @@ function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication,
 
   let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
   let statBytes: ILabeledStat;
-  let priority: ILabeledStat;
-  let publisherPriority: ILabeledStat;
 
   function canRenderTrack(track: any): track is LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack {
     return track;
@@ -124,13 +122,42 @@ function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication,
         valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
       });
       statBytes.setText('0');
-      priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority'});
+      const priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority'});
       priority.setText(`${track.priority}`);
 
-      publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority' });
+      const publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority' });
       publisherPriority.setText(`${trackPublication.publishPriority}`);
       trackPublication.on('publishPriorityChanged', () => {
         publisherPriority.setText(`${trackPublication.publishPriority}`);
+      });
+
+      const switchOffState = createLabeledStat({
+        container: trackBytesDiv,
+        label: 'Switched',
+        valueMapper: (text: string) => text === 'Off' ? sheet.classes.background_yellow : undefined
+      });
+
+      const updateSwitchOffState = () => switchOffState.setText(track.isSwitchedOff ? 'Off' : 'On');
+      track.on('switchedOff', updateSwitchOffState);
+      track.on('switchedOn', updateSwitchOffState);
+      updateSwitchOffState();
+
+      // buttons to set subscriber priority.
+      createButton('High', trackBytesDiv, () => {
+        track.setPriority('high');
+        priority.setText(`${track.priority}`);
+      });
+      createButton('Standard', trackBytesDiv, () => {
+        track.setPriority('standard');
+        priority.setText(`${track.priority}`);
+      });
+      createButton('Low', trackBytesDiv, () => {
+        track.setPriority('low');
+        priority.setText(`${track.priority}`);
+      });
+      createButton('Null', trackBytesDiv, () => {
+        track.setPriority(null);
+        priority.setText(`${track.priority}`);
       });
 
     } else {
@@ -368,10 +395,24 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
 
     networkQuality.setText(`${room.localParticipant.networkQualityLevel}`);
   };
+  room.localParticipant.addListener('networkQualityLevelChanged', updateNetworkQuality);
+
   const updateRecordingState = () => recording.setText(`${room.isRecording}`);
   const updateRoomState = () => roomState.setText(room.state);
 
-  room.localParticipant.addListener('networkQualityLevelChanged', updateNetworkQuality);
+  const mosScore = createLabeledStat({
+    container,
+    label: 'mos',
+  });
+  mosScore.setText('null');
+
+  const updateMos = () => {
+    // @ts-ignore
+    const mos = room.mosScore;
+    console.log('room.mosScore: ', mos);
+    mosScore.setText(`${mos}`);
+  };
+  room.addListener('mosScoreChanged', updateMos);
   room.addListener('disconnected', updateRoomState);
   room.addListener('reconnected', updateRoomState);
   room.addListener('reconnecting', updateRoomState);

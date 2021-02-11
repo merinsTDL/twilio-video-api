@@ -13,6 +13,44 @@ import { Log, LocalTrack, Room, RemoteParticipant, RemoteTrack, RemoteTrackPubli
 
 import jss from './jss'
 
+/*
+You can override any of the SDP function by specifying a console override like a one below before connecting to the room:
+window.sdpTransform = function (override, description, pc) {
+  console.log(`overriding ${override} for ${description.type}  of length ${description.sdp.length} in peerConnection:`,  pc );
+  return description;
+}
+*/
+
+let overridesSet = false;
+function setupLocalDescriptionOverride() {
+  // @ts-ignore
+  const transform = window.sdpTransform;
+  if (!overridesSet && typeof transform === 'function') {
+    overridesSet = true;
+    const origSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
+    const origSetRemoteDescription = RTCPeerConnection.prototype.setRemoteDescription;
+    const origCreateOffer = RTCPeerConnection.prototype.createOffer;
+    const origCreateAnswer = RTCPeerConnection.prototype.createAnswer;
+    RTCPeerConnection.prototype.setLocalDescription = function setLocalDescription(description) {
+      return origSetLocalDescription.call(this, transform('setLocalDescription', description, this));
+    };
+    RTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescription(description) {
+      return origSetRemoteDescription.call(this, transform('setRemoteDescription', description, this));
+    };
+    RTCPeerConnection.prototype.createOffer = function createOffer(options) {
+      return origCreateOffer.call(this, options).then((offer: RTCSessionDescription) => {
+        return transform('createOffer', offer, this);
+      });
+    };
+    RTCPeerConnection.prototype.createAnswer = function createAnswer(options) {
+      return origCreateAnswer.call(this, options).then((answer: RTCSessionDescription) => {
+        return transform('createAnswer', answer, this);
+      });
+    };
+  }
+}
+
+
 // Create your style.
 const style = {
   roomControls: {
@@ -171,6 +209,11 @@ export function createRoomControls(
   // for simulcast use:
   // { preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
   const defaultOptions = { networkQuality: { local: 3, remote: 0 } };
+  // const defaultOptions = {
+  //   "preferredVideoCodecs": [{"codec":"H264"}],
+  //   "iceTransportPolicy" : "relay"
+  // };
+
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions);
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
   autoAttach.checked = getBooleanUrlParam('autoAttach', true);
@@ -250,6 +293,7 @@ export function createRoomControls(
 
   // eslint-disable-next-line consistent-return
   const btnJoin = createButton('Join', roomControlsDiv, async () => {
+    setupLocalDescriptionOverride();
     try {
       const token = (await getRoomCredentials()).token;
       return joinRoom(token);

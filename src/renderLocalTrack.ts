@@ -65,6 +65,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
 
   roomSid.innerHTML = room.localParticipant.identity;
 
+  let priorityButtons: IButton[] = [];
   let unPublishBtn: IButton;
   let publishBtn: IButton;
   let statBytes: ILabeledStat;
@@ -73,6 +74,10 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
   let previousBytes = 0;
   let previousTime = 0;
   const updateControls = () => {
+
+    // show priority buttons only when trackPublication is available.
+    priorityButtons.forEach(priButton => priButton.show(!!trackPublication))
+
     publishBtn.show(!trackPublication);
     unPublishBtn.show(!!trackPublication);
     statBytes.setText('0');
@@ -90,6 +95,13 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     }
     publishBtn.enable();
   });
+  unPublishBtn = createButton('unpublish', container, () => {
+    if (trackPublication) {
+      trackPublication.unpublish();
+      trackPublication = null;
+      updateControls();
+    }
+  });
 
   statBytes = createLabeledStat({
     container,
@@ -101,13 +113,16 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     container,
     label: 'publish priority'
   });
-  unPublishBtn = createButton('unpublish', container, () => {
-    if (trackPublication) {
-      trackPublication.unpublish();
-      trackPublication = null;
+
+  // set publish priority.
+  ['high', 'standard', 'low'].forEach(priorityText => {
+    const button = createButton(priorityText, container, () => {
+      trackPublication?.setPriority(priorityText as Track.Priority);
       updateControls();
-    }
-  });
+    });
+    priorityButtons.push(button);
+  })
+
   updateControls();
 
   if (shouldAutoPublish) {

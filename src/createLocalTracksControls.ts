@@ -97,6 +97,16 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
     renderLocalTrack2(localTrack);
   });
 
+  const btnScreenShare = createButton('+ Screen Share', localTrackButtonsContainer, async () => {
+    const thisTrackName = 'screen-' + number++;
+    // @ts-ignore
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { width: 1920, height: 1080, frameRate: 15 }
+    });
+    const localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
+    renderLocalTrack2(localTrack);
+  });
+
   // eslint-disable-next-line no-unused-vars
   const enumerateBtn = createButton('Enumerate Cameras', localTrackButtonsContainer, async () => {
     enumerateBtn.disable();

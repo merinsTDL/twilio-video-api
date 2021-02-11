@@ -13,6 +13,7 @@ export function syntheticVideo({ width = 640, height = 480, word = 'hello' } = {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   // const wordWidth = ctx.measureText(word).width;
   let r = 0;
+  let i = 0;
   requestAnimationFrame(function animate() {
     r += Math.PI / 180;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -21,7 +22,8 @@ export function syntheticVideo({ width = 640, height = 480, word = 'hello' } = {
     ctx.rotate(r);
     ctx.font = '30px Verdana';
     ctx.textAlign = 'center';
-    ctx.fillText(word, 0, 0);
+    ctx.fillText(`${word}-${i}`, 0, 0);
+    i++;
     ctx.restore();
     requestAnimationFrame(animate);
   });
