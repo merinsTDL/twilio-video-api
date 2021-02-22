@@ -1,35 +1,25 @@
 /* eslint-disable no-console */
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
-import { createElement } from './components/createElement';
-import { createLabeledStat, ILabeledStat } from './components/labeledstat';
+import { createLabeledStat } from './components/labeledstat';
 import { createLink } from './components/createLink';
 import { createSelection } from './components/createSelection';
 import { getCreds } from './getCreds';
 import { log as log2 } from './components/log';
-import { renderTrack } from './renderTrack';
 import { updateTrackStats } from './renderLocalTrack';
 import {
   Log,
   Room,
-  LocalAudioTrack,
-  LocalVideoTrack,
-  RemoteAudioTrack,
-  RemoteVideoTrack,
-  RemoteParticipant,
-  RemoteTrackPublication,
   LocalAudioTrackStats,
   LocalVideoTrackStats,
   RemoteAudioTrackStats,
   RemoteVideoTrackStats,
-  Track,
   Participant
 } from 'twilio-video';
 import { createHeader } from './createHeader';
-
-
+import { IRenderedRemoteParticipant, renderRemoteParticipant } from './renderRemoteParticipant';
 import jss from './jss'
-
+import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 // Create your style.
 const style = {
   background_gray: {
@@ -86,168 +76,6 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
-export type IRenderedRemoteTrackPublication = {
-  setBytesReceived: (bytesReceived: number, timestamp: number) => void;
-  trackPublication: RemoteTrackPublication;
-  container: HTMLElement;
-  stopRendering: () => void;
-}
-
-function renderRemoteTrackPublication(trackPublication : RemoteTrackPublication, container : HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
-  const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
-  container = createDiv(container, sheet.classes.publication, trackContainerId);
-
-  const trackSid = createHeader({ container, type: 'h6', text: `${trackPublication.kind}:${trackPublication.trackSid}` });
-
-  let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
-  let statBytes: ILabeledStat;
-
-  function canRenderTrack(track: any): track is LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack {
-    return track;
-  }
-
-  function renderRemoteTrack() {
-    const track = trackPublication.track;
-    if (canRenderTrack(track)) {
-
-      renderedTrack = renderTrack({
-        track,
-        container,
-        autoAttach
-      });
-      const trackBytesDiv = createDiv(container, sheet.classes.remoteTrackControls, 'remoteTrackControls');
-      statBytes = createLabeledStat({
-        container: trackBytesDiv,
-        label: 'received kbps',
-        valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
-      });
-      statBytes.setText('0');
-      const priority = createLabeledStat({ container: trackBytesDiv, label: 'subscriber priority'});
-      priority.setText(`${track.priority}`);
-
-      const publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority' });
-      publisherPriority.setText(`${trackPublication.publishPriority}`);
-      trackPublication.on('publishPriorityChanged', () => {
-        publisherPriority.setText(`${trackPublication.publishPriority}`);
-      });
-
-      const switchOffState = createLabeledStat({
-        container: trackBytesDiv,
-        label: 'Switched',
-        valueMapper: (text: string) => text === 'Off' ? sheet.classes.background_yellow : undefined
-      });
-
-      const updateSwitchOffState = () => switchOffState.setText(track.isSwitchedOff ? 'Off' : 'On');
-      track.on('switchedOff', updateSwitchOffState);
-      track.on('switchedOn', updateSwitchOffState);
-      updateSwitchOffState();
-
-      // buttons to set subscriber priority.
-      createButton('High', trackBytesDiv, () => {
-        track.setPriority('high');
-        priority.setText(`${track.priority}`);
-      });
-      createButton('Standard', trackBytesDiv, () => {
-        track.setPriority('standard');
-        priority.setText(`${track.priority}`);
-      });
-      createButton('Low', trackBytesDiv, () => {
-        track.setPriority('low');
-        priority.setText(`${track.priority}`);
-      });
-      createButton('Null', trackBytesDiv, () => {
-        track.setPriority(null);
-        priority.setText(`${track.priority}`);
-      });
-
-    } else {
-      console.warn('CanRender returned false for ', track);
-    }
-  }
-
-  if (trackPublication.isSubscribed) {
-    renderRemoteTrack();
-  }
-
-  trackPublication.on('subscribed', function(track) {
-    log2(`Subscribed to ${trackPublication.kind}:${track.name}`);
-    renderRemoteTrack();
-  });
-
-  trackPublication.on('unsubscribed', () => {
-    renderedTrack?.stopRendering();
-    renderedTrack = null;
-  });
-
-  let previousBytes = 0;
-  let previousTime = 0;
-  return {
-    setBytesReceived: (bytesReceived: number, timeStamp: number) => {
-      if (statBytes) {
-        const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
-        const bps =  round((bytesReceived - previousBytes) / (timeStamp - previousTime));
-        previousBytes = bytesReceived;
-        previousTime = timeStamp;
-        statBytes.setText(bps.toString());
-      }
-    },
-    trackPublication,
-    container,
-    stopRendering: () => {
-      if (renderedTrack) {
-        renderedTrack.stopRendering();
-        renderedTrack = null;
-      }
-      container.remove();
-    }
-  };
-}
-export type IRenderedRemoteParticipant = {
-  container: HTMLElement;
-  updateStats: ({ trackSid, bytesReceived, timestamp } : { trackSid: string, bytesReceived: number, timestamp: number }) => void;
-  stopRendering: () => void;
-}
-
-export function renderRemoteParticipant(participant: RemoteParticipant, container:HTMLElement, shouldAutoAttach: () => boolean) : IRenderedRemoteParticipant {
-  container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
-
-  const participantName  = createHeader({ container, text: participant.identity });
-  const participantMedia = createDiv(container, sheet.classes.participantMediaDiv);
-  const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
-  participant.tracks.forEach(publication => {
-    const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
-    renderedPublications.set(publication.trackSid, rendered);
-  });
-
-  participant.on('trackPublished', publication => {
-    const rendered = renderRemoteTrackPublication(publication, participantMedia, shouldAutoAttach());
-    renderedPublications.set(publication.trackSid, rendered);
-  });
-  participant.on('trackUnpublished', publication => {
-    const rendered = renderedPublications.get(publication.trackSid);
-    if (rendered) {
-      rendered.stopRendering();
-      renderedPublications.delete(publication.trackSid);
-    }
-  });
-  return {
-    container,
-    updateStats: ({ trackSid, bytesReceived, timestamp } : { trackSid: string, bytesReceived: number, timestamp: number }) => {
-      renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
-        if (trackSid === renderedTrackSid) {
-          renderedTrackpublication.setBytesReceived(bytesReceived, timestamp);
-        }
-      })
-    },
-    stopRendering: () => {
-      renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
-        renderedTrackpublication.stopRendering();
-        renderedPublications.delete(renderedTrackSid);
-      })
-      container.remove();
-    }
-  };
-}
 
 async function renderExtraRoomInformation({ room, container, env, getServerUrl }:
   {
@@ -323,7 +151,10 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   env?: string,
   logger: Log.Logger
 }) {
-  container = createDiv(container, sheet.classes.roomContainer);
+  const { innerDiv , outerDiv }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
+  container = innerDiv;
+
+  // container = createDiv(container, sheet.classes.roomContainer);
   console.log(logger.levels);
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);
@@ -331,7 +162,6 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
     id: 'logLevel',
     container,
     options,
-    // options: ['warn', 'debug', 'info', 'error', 'silent'],
     title: 'logLevel',
     onChange: () => {
       log2(`setting logLevel: ${logLevelSelect.getValue()} for ${room.localParticipant.identity} in ${room.sid}`);
@@ -341,10 +171,13 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
 
   logLevelSelect.setValue(currentLevel);
 
-  const roomSid = createHeader( { container, text: `${room.localParticipant.identity} in ${room.sid}`});
+  createHeader( { container, text: `${room.localParticipant.identity}`});
+  createHeader( { container, text: `${room.sid}`});
+
   const btnDisconnect = createButton('disconnect', container, () => {
     room.disconnect();
-    container.remove();
+    // container.remove();
+    outerDiv.remove();
   });
   if (renderExtraInfo()) {
     await renderExtraRoomInformation({ env, room, container, getServerUrl  });
@@ -368,6 +201,11 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
     valueMapper: (text: string) => text === 'true' ? sheet.classes.background_red : undefined
   });
 
+  const dominantSpeaker = createLabeledStat({ container, label: 'dominantSpeaker' });
+  const updateDominantSpeaker = () => dominantSpeaker.setText(room.dominantSpeaker ? room.dominantSpeaker.identity : 'none');
+  room.on('dominantSpeakerChanged', updateDominantSpeaker);
+  updateDominantSpeaker();
+
   const networkQuality = createLabeledStat({
     container,
     label: 'room.localParticipant.networkQualityLevel',
@@ -390,11 +228,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
     }
   });
 
-  const updateNetworkQuality = () => {
-    console.log('room.localParticipant.networkQualityLevel: ', room.localParticipant.networkQualityLevel);
-
-    networkQuality.setText(`${room.localParticipant.networkQualityLevel}`);
-  };
+  const updateNetworkQuality = () => networkQuality.setText(`${room.localParticipant.networkQualityLevel}`);
   room.localParticipant.addListener('networkQualityLevelChanged', updateNetworkQuality);
 
   const updateRecordingState = () => recording.setText(`${room.isRecording}`);

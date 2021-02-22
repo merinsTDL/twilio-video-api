@@ -12,6 +12,7 @@ import { log as log2 } from './components/log';
 import { Log, LocalTrack, Room, RemoteParticipant, RemoteTrack, RemoteTrackPublication } from 'twilio-video';
 
 import jss from './jss'
+import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 
 /*
 You can override any of the SDP function by specifying a console override like a one below before connecting to the room:
@@ -50,10 +51,10 @@ function setupLocalDescriptionOverride() {
   }
 }
 
-
 // Create your style.
 const style = {
   roomControls: {
+    width: '300px',
     display: 'flex',
     padding: '5px',
     border: 'solid black 1px',
@@ -74,6 +75,7 @@ const style = {
   },
   controlOptions: {
     display: 'flex',
+    'flex-flow': 'row wrap',
     'margin-top': '10px',
     'justify-content': 'center',
     'align-items': 'center',
@@ -104,6 +106,7 @@ export interface IRoomControl {
   shouldAutoPublish: () => boolean,
   renderExtraInfo: () => boolean,
   getServerUrl: () => string,
+  getRoomControlsDiv: () => HTMLDivElement
 };
 
 export function createRoomControls(
@@ -113,14 +116,15 @@ export function createRoomControls(
   roomJoined: (room: Room, logger: Log.Logger, env: string) => void
 ): IRoomControl {
   const urlParams = new URLSearchParams(window.location.search);
-  const roomControlsDiv = createDiv(container, sheet.classes.roomControls, 'room-controls') as HTMLDivElement;
 
-  const twilioVideoVersion = createElement({ container: roomControlsDiv, type: 'h3', id: 'twilioVideoVersion' });
+  const { innerDiv, outerDiv } = createCollapsibleDiv({ container, headerText: 'Controls', divClass: sheet.classes.roomControls });
+
+  const twilioVideoVersion = createElement({ container: innerDiv, type: 'h3', id: 'twilioVideoVersion' });
   twilioVideoVersion.innerHTML = 'Twilio-Video@' + Video.version;
 
   const topologySelect = createSelection({
     id: 'topology',
-    container: roomControlsDiv,
+    container: innerDiv,
     options: ['group-small', 'peer-to-peer', 'group', 'go'],
     title: 'topology',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -130,7 +134,7 @@ export function createRoomControls(
   let extraConnectOptions: { value: string; };
   const envSelect = createSelection({
     id: 'env',
-    container: roomControlsDiv,
+    container: innerDiv,
     options: ['dev', 'stage', 'prod'],
     title: 'env',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -138,7 +142,8 @@ export function createRoomControls(
       const newEnv = envSelect.getValue();
       if (newEnv === 'dev') {
         // eslint-disable-next-line no-use-before-define
-        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify({ wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
+        const devOptions = Object.assign({}, defaultOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
+        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions);
       }
       log2('env change:', newEnv);
     }
@@ -146,10 +151,10 @@ export function createRoomControls(
 
   //
   // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
-  const labelText = createLink({ container: roomControlsDiv, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
+  const labelText = createLink({ container: innerDiv, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
   labelText.classList.add(sheet.classes.roomControlsLabel);
   const tokenServerUrlInput = createLabeledInput({
-    container: roomControlsDiv,
+    container: innerDiv,
     labelText,
     placeHolder: 'Enter server url',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -157,7 +162,7 @@ export function createRoomControls(
   });
 
   const localIdentity = createLabeledInput({
-    container: roomControlsDiv,
+    container: innerDiv,
     labelText: 'Identity: ',
     placeHolder: 'Enter identity or random one will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -165,7 +170,7 @@ export function createRoomControls(
   });
 
   const roomNameInput = createLabeledInput({
-    container: roomControlsDiv,
+    container: innerDiv,
     labelText: 'Room: ',
     placeHolder: 'Enter room name or random name will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -173,7 +178,7 @@ export function createRoomControls(
   });
 
   extraConnectOptions = createLabeledInput({
-    container: roomControlsDiv,
+    container: innerDiv,
     labelText: 'ConnectOptions: ',
     placeHolder: 'connectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -181,7 +186,7 @@ export function createRoomControls(
   });
 
   const maxParticipantsInput = createLabeledInput({
-    container: roomControlsDiv,
+    container: innerDiv,
     labelText: 'MaxParticipants: ',
     placeHolder: 'optional (51+ makes large room)]',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -189,7 +194,7 @@ export function createRoomControls(
   });
 
 
-  const controlOptionsDiv = createDiv(roomControlsDiv, sheet.classes.controlOptions, 'control-options');
+  const controlOptionsDiv = createDiv(innerDiv, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
   const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });
@@ -208,11 +213,20 @@ export function createRoomControls(
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
   // for simulcast use:
   // { preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
-  const defaultOptions = { networkQuality: { local: 3, remote: 0 } };
+  // const defaultOptions = { networkQuality: { local: 3, remote: 0 } };
   // const defaultOptions = {
   //   "preferredVideoCodecs": [{"codec":"H264"}],
   //   "iceTransportPolicy" : "relay"
   // };
+  const defaultOptions = {
+    networkQuality: { local: 3, remote: 0 },
+    dominantSpeaker: true,
+    bandwidthProfile: {
+      video: {
+        maxTracks: 1
+      }
+    }
+  };
 
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions);
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
@@ -292,7 +306,7 @@ export function createRoomControls(
   }
 
   // eslint-disable-next-line consistent-return
-  const btnJoin = createButton('Join', roomControlsDiv, async () => {
+  const btnJoin = createButton('Join', innerDiv, async () => {
     setupLocalDescriptionOverride();
     try {
       const token = (await getRoomCredentials()).token;
@@ -314,12 +328,12 @@ export function createRoomControls(
   const testPreflight = Video.testPreflight;
   if (typeof runPreflight === 'function' || typeof testPreflight === 'function') {
     let preflightTest: any = null;
-    createButton('prepare preflight', roomControlsDiv, async () => {
+    createButton('prepare preflight', innerDiv, async () => {
       localIdentity.value = 'Alice';
       const aliceToken = (await getRoomCredentials()).token;
       localIdentity.value = 'Bob';
       const bobToken = (await getRoomCredentials()).token;
-      createButton('runPreflight', roomControlsDiv, async () => {
+      createButton('runPreflight', innerDiv, async () => {
         const logger = Video.Logger.getLogger('twilio-video');
         logger.setLevel('DEBUG');
         console.log('starting runPreflight');
@@ -367,7 +381,8 @@ export function createRoomControls(
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked,
     renderExtraInfo: () => extraInfo.checked,
-    getServerUrl: () => tokenServerUrlInput.value
+    getServerUrl: () => tokenServerUrlInput.value,
+    getRoomControlsDiv: () => innerDiv
   };
 }
 

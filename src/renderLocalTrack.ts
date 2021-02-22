@@ -8,6 +8,7 @@ import { renderTrack } from './renderTrack';
 import { Room, LocalAudioTrack, LocalVideoTrack, Track, TrackPublication, LocalTrackPublication } from 'twilio-video';
 
 import jss from './jss'
+import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 
 // Create your style.
 const style = {
@@ -165,7 +166,8 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   onClosed: () => void,
   videoDevices: MediaDeviceInfo[]
 }): IRenderedLocalTrack {
-  const localTrackContainer = createDiv(container, sheet.classes.localTrackContainer);
+  const { innerDiv: localTrackContainer, outerDiv } = createCollapsibleDiv({ container, headerText: 'LocalTrack', divClass: sheet.classes.localTrackContainer });
+  // const localTrackContainer = createDiv(container, sheet.classes.localTrackContainer);
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
   const localTrackControls = createDiv(localTrackContainer, sheet.classes.localTrackControls);
@@ -227,7 +229,8 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
     })
     stopRendering();
     track.stop();
-    localTrackContainer.remove();
+    // localTrackContainer.remove();
+    outerDiv.remove();
     onClosed();
   });
 

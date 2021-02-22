@@ -1,5 +1,5 @@
 import { sheets } from 'jss';
-import { AudioTrack, VideoTrack } from 'twilio-video';
+import { AudioTrack, LocalAudioTrack, LocalVideoTrack, RemoteAudioTrack, RemoteVideoTrack, VideoTrack } from 'twilio-video';
 import { createDiv } from './components/createDiv';
 import { ILabeledStat, createLabeledStat } from './components/labeledstat';
 import jss from './jss'
@@ -30,7 +30,21 @@ type functionReturningString = () => string;
 type stringOrFn = string|functionReturningString;
 
 
-export function createTrackStats(track: AudioTrack | VideoTrack, container: HTMLElement) {
+function getClass(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack) {
+  if (track instanceof LocalAudioTrack) {
+    return 'LocalAudioTrack'
+  } else if (track instanceof LocalVideoTrack) {
+    return 'LocalVideoTrack'
+  } else if (track.kind === 'audio') {
+    return 'RemoteAudioTrack';
+  } else if (track.kind === 'video') {
+    return 'RemoteVideoTrack';
+  } else {
+    return 'unknown';
+  }
+}
+
+export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack, container: HTMLElement) {
   container = createDiv(container, 'trackStats');
 
   function isVideoTrack(track: AudioTrack | VideoTrack): track is VideoTrack {
@@ -39,9 +53,8 @@ export function createTrackStats(track: AudioTrack | VideoTrack, container: HTML
 
   createLabeledStat({
     container,
-    label: 'kind',
-    valueMapper: (text: string) => text === 'audio' ? sheet.classes.audioTrack : sheet.classes.videoTrack
-  }).setText(track.kind);
+    label: 'class'
+  }).setText(getClass(track));
 
   const readyState = createLabeledStat({
     container,

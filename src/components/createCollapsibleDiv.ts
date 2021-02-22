@@ -17,20 +17,23 @@ export function createCollapsibleDiv({ container, headerText, divClass } : {
   container: HTMLElement,
   headerText: string,
   divClass: string[] | string
-}) : HTMLDivElement {
+}) : { innerDiv: HTMLDivElement, outerDiv: HTMLDivElement } {
   const collapsibleDiv = createDiv(container, ['collapsible']);
   const headerDiv = createDiv(collapsibleDiv, sheet.classes.roomHeaderDiv);
   const innerDiv = createDiv(collapsibleDiv, divClass);
   let display = 'none';
-  const showHideButton = createButton(`hide: ${headerText}`, headerDiv, () => {
+  const showHideButton = createButton(`- ${headerText}`, headerDiv, () => {
     if (innerDiv.style.display === 'none') {
       innerDiv.style.display = display;
-      showHideButton.text(`hide: ${headerText}`);
+      showHideButton.text(`- ${headerText}`);
     } else {
       display = innerDiv.style.display;
       innerDiv.style.display = 'none';
-      showHideButton.text(`show: ${headerText}`);
+      showHideButton.text(`+ ${headerText}`);
     }
   });
-  return innerDiv;
+  return {
+    innerDiv,
+    outerDiv: collapsibleDiv
+  };
 }

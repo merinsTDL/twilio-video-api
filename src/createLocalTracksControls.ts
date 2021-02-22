@@ -24,27 +24,29 @@ const style = {
   },
   trackButtonsContainer: {
     'text-align': 'left',
+    'display': 'flex',
+    'flex-flow': 'row wrap'
   }
+
 }
 // Compile styles, apply plugins.
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
-export function createLocalTracksControls({ container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
-  container: HTMLElement,
+export function createLocalTracksControls({ buttonContainer, container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
+  buttonContainer: HTMLDivElement, // parent for control buttons
+  container: HTMLElement, // parent for tracks.
   rooms: Room[],
   Video: typeof import('twilio-video'),
   localTracks: LocalTrack[],
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean
 }) {
-  container = createDiv(container, sheet.classes.localTracksDiv);
-
   let number = 0;
   const autoAudio = getBooleanUrlParam('autoAudio', false);
   const autoVideo = getBooleanUrlParam('autoVideo', false);
 
-  const localTrackButtonsContainer = createDiv(container, sheet.classes.trackButtonsContainer);
+  const localTrackButtonsContainer = createDiv(buttonContainer, sheet.classes.trackButtonsContainer);
   const localTracksContainer = createDiv(container, sheet.classes.trackRenders);
 
   const renderedTracks = new Map<LocalTrack, IRenderedLocalTrack>();
@@ -91,7 +93,7 @@ export function createLocalTracksControls({ container, rooms, Video, localTracks
 
 
   const btnSyntheticVideo = createButton('+ Synthetic Video', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'Video-' + number++;
+    const thisTrackName = 'V-' + number++;
     const msTrack = await syntheticVideo({ width: 300, height: 150, word: thisTrackName });
     const localTrack = new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);

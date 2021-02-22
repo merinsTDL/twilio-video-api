@@ -58,8 +58,6 @@ export function renderTrack({ track, container, autoAttach } : {
   autoAttach: boolean
 }) {
 
-  // @ts-ignore
-  // const trackContainerId = track.sid || track.id;
   const trackContainer = createDiv(container, sheet.classes.trackContainer);
   const { updateStats } = createTrackStats(track, trackContainer);
 
@@ -68,7 +66,7 @@ export function renderTrack({ track, container, autoAttach } : {
   createButton('update', controlContainer, () => updateStats());
 
   let mediaControls: HTMLElement | null = null;
-  let stopMediaRender: () => void;
+  let stopMediaRender: () => {};
   const attachDetachBtn = createButton('attach', controlContainer, () => {
     if (mediaControls) {
       // track is already attached.
@@ -81,7 +79,7 @@ export function renderTrack({ track, container, autoAttach } : {
       mediaControls = createDiv(trackContainer, 'mediaControls');
       const mediaRenderer = track.kind === 'audio' ? attachAudioTrack(track, mediaControls): attachVideoTrack(track, mediaControls);
       const audioVideoElement = mediaRenderer.mediaElement;
-      stopMediaRender = mediaRenderer.stop;
+      stopMediaRender = () => mediaRenderer.stop;
 
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());

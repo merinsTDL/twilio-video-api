@@ -43,27 +43,27 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   createLink({ container: containerDiv, linkText: 'Twilio-Video-API-Demo', linkUrl: 'https://github.com/makarandp0/twilio-video-api', newTab: true });
 
   // create html
-  const mainDiv = createDiv(containerDiv, sheet.classes.mainDiv, 'main');
+  const container = createDiv(containerDiv, sheet.classes.mainDiv, 'main');
   createLog(containerDiv);
   log("Version: ", Video.version);
   log("IsSupported: ", Video.isSupported);
   log("UserAgent: ", navigator.userAgent);
-
-  const container = createCollapsibleDiv({ container: mainDiv, headerText: 'Local Controls', divClass: sheet.classes.localControls });
 
   const localTracks: LocalTrack[] = [];
   const rooms: Room[] = [];
 
   // @ts-ignore
   window.Twilio = { Video, rooms };
-  const  { shouldAutoAttach, shouldAutoPublish, renderExtraInfo, getServerUrl } = createRoomControls(
+  const  { shouldAutoAttach, shouldAutoPublish, renderExtraInfo, getServerUrl, getRoomControlsDiv } = createRoomControls(
     container,
     Video,
     localTracks,
     roomJoined,
   );
 
+  const buttonContainer = getRoomControlsDiv();
   const { roomAdded, roomRemoved } = createLocalTracksControls({
+    buttonContainer,
     container,
     Video,
     localTracks,
@@ -78,7 +78,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     rooms.push(room);
     roomAdded(room);
     log(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
-    renderRoom({ room, container: mainDiv, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger });
+    renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger });
     room.on('disconnected', (_, err) => {
       log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {

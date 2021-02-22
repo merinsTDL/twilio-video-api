@@ -13,7 +13,7 @@ import jss from '../jss'
 const style = {
   button: {
     height: '2em',
-    margin: '5px',
+    margin: '2px',
   },
 }
 // Compile styles, apply plugins.
