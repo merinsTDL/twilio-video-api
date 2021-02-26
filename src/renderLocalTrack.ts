@@ -5,7 +5,7 @@ import { createElement } from './components/createElement';
 import { createLabeledStat, ILabeledStat } from './components/labeledstat';
 import { log } from './components/log';
 import { renderTrack } from './renderTrack';
-import { Room, LocalAudioTrack, LocalVideoTrack, Track, TrackPublication, LocalTrackPublication } from 'twilio-video';
+import { Room, LocalAudioTrack, LocalVideoTrack, Track, LocalTrackPublication } from 'twilio-video';
 
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
@@ -26,8 +26,12 @@ const style = {
     'border-right': 'solid 1px black',
   },
   localTrackContainer: {
-    padding: '5px',
-    'max-width': '300px',
+    resize: 'both',
+    border: 'solid 1px black',
+    overflow: 'auto',
+    'overflow-y': 'scroll',
+    // padding: '5px',
+    width: '300px'
   }
 }
 // Compile styles, apply plugins.
@@ -167,7 +171,6 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   videoDevices: MediaDeviceInfo[]
 }): IRenderedLocalTrack {
   const { innerDiv: localTrackContainer, outerDiv } = createCollapsibleDiv({ container, headerText: 'LocalTrack', divClass: sheet.classes.localTrackContainer });
-  // const localTrackContainer = createDiv(container, sheet.classes.localTrackContainer);
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
   const localTrackControls = createDiv(localTrackContainer, sheet.classes.localTrackControls);

@@ -15,7 +15,6 @@ const style = {
   trackContainer: {
     border: 'solid 1px black',
     padding: '5px',
-    'max-width': '300px',
   },
   videoElement: {
     'max-width': '100% !important',

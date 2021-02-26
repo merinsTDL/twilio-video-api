@@ -87,7 +87,7 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
   // eslint-disable-next-line no-unused-vars
   const btnPreviewVideo = createButton('+ Local Video', localTrackButtonsContainer, async () => {
     const thisTrackName = 'camera-' + number++;
-    const localTrack = await Video.createLocalVideoTrack({ logLevel: 'warn', name: thisTrackName });
+    const localTrack = await Video.createLocalVideoTrack({ width: 1280, height: 720, logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });
 

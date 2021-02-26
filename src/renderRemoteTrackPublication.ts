@@ -62,8 +62,11 @@ const style = {
     display: 'flex'
   },
   publication: {
-    padding: '5px',
-    'max-width': '300px',
+    border: 'solid 1px black',
+    resize: 'both',
+    overflow: 'auto',
+    'overflow-y': 'scroll',
+    width: '300px',
   }
 }
 // Compile styles, apply plugins.
@@ -145,24 +148,22 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
       });
 
       // @ts-ignore
-      if (typeof track.setRenderHint === 'function') {
+      if (typeof track._setRenderHint === 'function') {
+        // @ts-ignore
+        const setRenderHint = track._setRenderHint.bind(track);
         const renderHint = createLabeledStat({ container: trackBytesDiv, label: 'renderHint' });
         renderHint.setText(`none`);
         createButton('disable', trackBytesDiv, () => {
-          // @ts-ignore
-          track.setRenderHint({ enabled: false });
-          renderHint.setText(`enabled=true`);
+          setRenderHint({ enabled: false });
+          renderHint.setText(`enabled=false`);
         });
-
-        createButton('small', trackBytesDiv, () => {
-          // @ts-ignore
-          track.setRenderHint({ enabled: true, renderDimension: { height: 20, width: 20 } });
-          renderHint.setText(`renderDimension=small`);
+        createButton('320x240', trackBytesDiv, () => {
+          setRenderHint({ enabled: true, renderDimension: { width:  160, height: 120 } });
+          renderHint.setText(`renderDimension=320x240`);
         });
-        createButton('big', trackBytesDiv, () => {
-          // @ts-ignore
-          track.setRenderHint({ enabled: true, renderDimension: { height: 2000, width: 2000 } });
-          renderHint.setText(`renderDimension=big`);
+        createButton('1280x720', trackBytesDiv, () => {
+          setRenderHint({ enabled: true, renderDimension: { width: 1280, height: 720 } });
+          renderHint.setText(`renderDimension=1280x720`);
         });
       }
 
