@@ -1,5 +1,16 @@
 import { randomItem } from './randomItem';
 
+let callNumber = 0;
+export function randomParticipantName(): string {
+  const names = ['Alice', 'Bob', 'Charlie', 'Delta', 'Echo', 'FoxTrot', 'Golf', 'Hotel', 'India',
+    'Juliet', 'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra',
+    'Tango', 'Uniform', 'Victor', 'Whiskey', 'X-ray', 'Yankee', 'Zulu'];
+
+    let pick = names[callNumber];
+    callNumber = (callNumber+1) % 26;
+    return pick;
+}
+
 export function randomName() {
   var ADJECTIVES = [
     'Abrasive', 'Brash', 'Callous', 'Daft', 'Eccentric', 'Finest', 'Golden',

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { randomName, randomRoomName } from  './randomName';
+import { randomName, randomParticipantName, randomRoomName } from  './randomName';
 import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createElement } from './components/createElement';
@@ -205,7 +205,7 @@ export function createRoomControls(
 
   // process parameters.
   roomNameInput.value = urlParams.get('room') || randomRoomName();
-  localIdentity.value = urlParams.get('identity') || randomName();
+  localIdentity.value = urlParams.get('identity') || randomParticipantName(); // randomName();
   tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
   maxParticipantsInput.value = urlParams.get('maxParticipants') || '';
 
@@ -238,7 +238,7 @@ export function createRoomControls(
   envSelect.setValue(urlParams.get('env') || 'prod');
 
   async function getRoomCredentials(): Promise<{token: string}> {
-    const identity = localIdentity.value || randomName();
+    const identity = localIdentity.value || randomParticipantName(); // randomName();
     let tokenServerUrl = tokenServerUrlInput.value;
     const topology = topologySelect.getValue();
     const environment = envSelect.getValue();
@@ -299,7 +299,7 @@ export function createRoomControls(
       .then(room => {
         roomJoined(room, logger, envSelect.getValue());
         // get new local identity for next join.
-        localIdentity.value = randomName();
+        localIdentity.value = randomParticipantName(); // randomName();
       }).catch(error => {
         log2('Could not connect to Twilio: ' + error.message);
       });
