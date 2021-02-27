@@ -151,10 +151,8 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   env?: string,
   logger: Log.Logger
 }) {
-  const { innerDiv , outerDiv }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
+  const { innerDiv, outerDiv }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
   container = innerDiv;
-
-  // container = createDiv(container, sheet.classes.roomContainer);
   console.log(logger.levels);
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);
@@ -171,9 +169,6 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
 
   logLevelSelect.setValue(currentLevel);
 
-  createHeader( { container, text: `${room.localParticipant.identity}`});
-  createHeader( { container, text: `${room.sid}`});
-
   const btnDisconnect = createButton('disconnect', container, () => {
     room.disconnect();
     // container.remove();
@@ -182,12 +177,17 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   if (renderExtraInfo()) {
     await renderExtraRoomInformation({ env, room, container, getServerUrl  });
   }
+
+  createLabeledStat({ container, label: 'class' }).setText('Room');
+  createLabeledStat({ container, label: 'sid' }).setText(room.sid);
+  createLabeledStat({ container, label: 'localParticipant' }).setText(room.localParticipant.identity);
+
   const roomState = createLabeledStat({
     container,
-    label: 'room.state',
+    label: 'state',
     valueMapper: (text: string) => {
       switch(text) {
-        case 'connected': return sheet.classes.background_green;
+        case 'connected': return undefined;
         case 'reconnecting': return sheet.classes.background_yellow;
         case 'disconnected': return sheet.classes.background_red;
         default:
@@ -197,7 +197,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   });
   const recording = createLabeledStat({
     container,
-    label: 'room.isRecording',
+    label: 'isRecording',
     valueMapper: (text: string) => text === 'true' ? sheet.classes.background_red : undefined
   });
 
@@ -208,7 +208,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
 
   const networkQuality = createLabeledStat({
     container,
-    label: 'room.localParticipant.networkQualityLevel',
+    label: 'localParticipant.networkQualityLevel',
     valueMapper: (text: string) => {
       switch(text) {
         case 'null':
@@ -221,7 +221,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
             return sheet.classes.background_yellow;
         case '4':
         case '5':
-          return sheet.classes.background_green;
+          return undefined;
         default:
           return sheet.classes.background_red;
       }

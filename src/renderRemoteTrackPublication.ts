@@ -84,8 +84,10 @@ export type IRenderedRemoteTrackPublication = {
 export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean): IRenderedRemoteTrackPublication {
   const trackContainerId = 'trackPublication_' + trackPublication.trackSid;
   container = createDiv(container, sheet.classes.publication, trackContainerId);
+  createLabeledStat({ container, label: 'class' }).setText('RemoteTrackPublication');
+  createLabeledStat({ container, label: 'kind' }).setText(trackPublication.kind);
+  createLabeledStat({ container, label: 'trackSid' }).setText(trackPublication.trackSid);
 
-  const trackSid = createHeader({ container, type: 'h6', text: `${trackPublication.kind}:${trackPublication.trackSid}` });
 
   let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
   let statBytes: ILabeledStat;

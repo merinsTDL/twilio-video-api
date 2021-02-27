@@ -13,6 +13,7 @@ export type IRenderedRemoteParticipant = {
 }
 
 import jss from './jss'
+import { createLabeledStat } from './components/labeledstat';
 // Create your style.
 const style = {
   background_gray: {
@@ -52,6 +53,7 @@ const style = {
   },
   participantDiv: {
     margin: '2px',
+    border: 'solid 1px black'
   },
   participantMediaDiv: {
     padding: '5px',
@@ -70,7 +72,9 @@ sheet.attach();
 export function renderRemoteParticipant(participant: RemoteParticipant, container: HTMLElement, shouldAutoAttach: () => boolean): IRenderedRemoteParticipant {
   container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
 
-  const participantName = createHeader({ container, text: participant.identity });
+  createLabeledStat({ container, label: 'class' }).setText('RemoteParticipant');
+  createLabeledStat({ container, label: 'identity' }).setText(participant.identity);
+  createLabeledStat({ container, label: 'sid' }).setText(participant.sid);
   const participantMedia = createDiv(container, sheet.classes.participantMediaDiv);
   const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {
