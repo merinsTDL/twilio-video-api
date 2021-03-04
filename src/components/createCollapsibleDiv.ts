@@ -6,7 +6,7 @@ import jss from '../jss'
 // Create your style.
 const style = {
   roomHeaderDiv: {
-    display: 'flex'
+    all: 'flex'
   }
 }
 // Compile styles, apply plugins.

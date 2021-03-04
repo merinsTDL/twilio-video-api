@@ -70,6 +70,9 @@ const style = {
   },
   publication: {
     padding: '5px'
+  },
+  collapsibleArea: {
+    all:'inherit'
   }
 }
 // Compile styles, apply plugins.
@@ -131,6 +134,8 @@ async function renderExtraRoomInformation({ room, container, env, getServerUrl }
 
 
 function getCurrentLoggerLevelAsString(logger: Log.Logger): string {
+  const currentLevel = logger.getLevel();
+  console.log('logger currentLevel = ', currentLevel);
   const levelNumToString = new Map<number, string>() ;
   levelNumToString.set(logger.levels.TRACE, 'TRACE');
   levelNumToString.set(logger.levels.DEBUG, 'DEBUG');
@@ -138,11 +143,11 @@ function getCurrentLoggerLevelAsString(logger: Log.Logger): string {
   levelNumToString.set(logger.levels.WARN, 'WARN');
   levelNumToString.set(logger.levels.ERROR, 'ERROR');
   levelNumToString.set(logger.levels.SILENT, 'SILENT');
-  const currentLevelStr = levelNumToString.get(logger.getLevel()) as string;
+  const currentLevelStr = levelNumToString.get(currentLevel) as string;
   return currentLevelStr;
 }
 
-export async function renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env = 'prod', logger }: {
+export async function renderRoomDetails({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env = 'prod', logger }: {
   room: Room,
   container: HTMLElement,
   shouldAutoAttach: () => boolean,
@@ -151,9 +156,8 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   env?: string,
   logger: Log.Logger
 }) {
-  const { innerDiv, outerDiv }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `sid:${room.sid}`, divClass: sheet.classes.roomContainer });
   container = innerDiv;
-  console.log(logger.levels);
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);
   const logLevelSelect = createSelection({
@@ -169,17 +173,11 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
 
   logLevelSelect.setValue(currentLevel);
 
-  const btnDisconnect = createButton('disconnect', container, () => {
-    room.disconnect();
-    // container.remove();
-    outerDiv.remove();
-  });
   if (renderExtraInfo()) {
     await renderExtraRoomInformation({ env, room, container, getServerUrl  });
   }
 
-  createLabeledStat({ container, label: 'class' }).setText('Room');
-  createLabeledStat({ container, label: 'sid' }).setText(room.sid);
+  // createLabeledStat({ container, label: 'sid' }).setText(room.sid);
   createLabeledStat({ container, label: 'localParticipant' }).setText(room.localParticipant.identity);
 
   const roomState = createLabeledStat({
@@ -261,6 +259,30 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   updateRoomState();
   updateRecordingState();
   updateNetworkQuality();
+
+}
+
+
+export async function renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env = 'prod', logger }: {
+  room: Room,
+  container: HTMLElement,
+  shouldAutoAttach: () => boolean,
+  renderExtraInfo: () => boolean,
+  getServerUrl: () => string,
+  env?: string,
+  logger: Log.Logger
+}) {
+
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
+  container = innerDiv;
+  createLabeledStat({ container, label: 'class' }).setText('Room');
+
+  // const { innerDiv: roomDetailsInner }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
+  renderRoomDetails({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger});
+  const btnDisconnect = createButton('disconnect', container, () => {
+    room.disconnect();
+    collapsible.remove();
+  });
 
   const isDisconnected = room.state === 'disconnected';
 

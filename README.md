@@ -33,14 +33,19 @@ node server
 ```
 server by defaults listens to requests on port 3000
 
-- Step 5: start the application
+- Step 5: open the application
+
+There are two ways to open the app. You can use online version or you can run it locally. To run online version point your browser to: https://makarandp0.github.io/twilio-video-api/
+
+
+Tu run it locally:
+
 ```
 npm start
 ```
 
-App starts listening on port 8080
+App starts listening on port 8080, Open http://localhost:8080/
 
-open http://localhost:8080/
 
 
 # Usage

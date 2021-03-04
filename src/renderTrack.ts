@@ -65,7 +65,7 @@ export function renderTrack({ track, container, autoAttach } : {
   createButton('update', controlContainer, () => updateStats());
 
   let mediaControls: HTMLElement | null = null;
-  let stopMediaRender: () => {};
+  let stopMediaRender = () => {};
   const attachDetachBtn = createButton('attach', controlContainer, () => {
     if (mediaControls) {
       // track is already attached.
