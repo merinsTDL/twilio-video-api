@@ -8,7 +8,7 @@ import { createLabeledInput } from './components/createLabeledInput';
 import { createLink } from './components/createLink';
 import { createSelection } from './components/createSelection';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
-import { log as log2 } from './components/log';
+import { log } from './components/log';
 import { Log, LocalTrack, Room, RemoteParticipant, RemoteTrack, RemoteTrackPublication } from 'twilio-video';
 
 import jss from './jss'
@@ -128,7 +128,7 @@ export function createRoomControls(
     options: ['group-small', 'peer-to-peer', 'group', 'go'],
     title: 'topology',
     labelClasses: [sheet.classes.roomControlsLabel],
-    onChange: () => log2('topology change:', topologySelect.getValue())
+    onChange: () => log('topology change:', topologySelect.getValue())
   });
 
   let extraConnectOptions: { value: string; };
@@ -145,7 +145,7 @@ export function createRoomControls(
         const devOptions = Object.assign({}, defaultOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
         extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions);
       }
-      log2('env change:', newEnv);
+      log('env change:', newEnv);
     }
   });
 
@@ -280,7 +280,7 @@ export function createRoomControls(
       }
     }
 
-    log2(`Joining room ${roomName} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
+    log(`Joining room ${roomName} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
     const loggerName = `[${localIdentity.value}]:`;
     const logger = Video.Logger.getLogger(loggerName);
     handleSDKLogs(logger);
@@ -293,7 +293,7 @@ export function createRoomControls(
     }, additionalConnectOptions);
     // Join the Room with the token from the server and the
     // LocalParticipant's Tracks.
-    log2(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)}`);
+    log(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)}`);
 
     Video.connect(token, connectOptions)
       .then(room => {
@@ -301,7 +301,7 @@ export function createRoomControls(
         // get new local identity for next join.
         localIdentity.value = randomParticipantName(); // randomName();
       }).catch(error => {
-        log2('Could not connect to Twilio: ' + error.message);
+        log('Could not connect to Twilio: ' + error.message);
       });
   }
 
@@ -312,7 +312,7 @@ export function createRoomControls(
       const token = (await getRoomCredentials()).token;
       return joinRoom(token);
     } catch (ex) {
-      log2('Failed: ', ex);
+      log('Failed: ', ex);
     }
   });
 

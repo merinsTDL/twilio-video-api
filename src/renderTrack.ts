@@ -17,6 +17,7 @@ const style = {
     padding: '5px',
   },
   videoElement: {
+    display: 'block',
     'max-width': '100% !important',
     'max-height': '80% !important'
   }
