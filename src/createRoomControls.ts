@@ -13,6 +13,7 @@ import { Log, LocalTrack, Room, RemoteParticipant, RemoteTrack, RemoteTrackPubli
 
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
+import { getRestCreds, REST_CREDENTIALS } from './getCreds';
 
 /*
 You can override any of the SDP function by specifying a console override like a one below before connecting to the room:
@@ -104,8 +105,6 @@ function handleSDKLogs(logger: Log.Logger) {
 export interface IRoomControl {
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean,
-  renderExtraInfo: () => boolean,
-  getServerUrl: () => string,
   getRoomControlsDiv: () => HTMLDivElement
 };
 
@@ -113,7 +112,7 @@ export function createRoomControls(
   container: HTMLElement,
   Video: typeof import('twilio-video'),
   localTracks: LocalTrack[],
-  roomJoined: (room: Room, logger: Log.Logger, env: string) => void
+  roomJoined: (room: Room, logger: Log.Logger, restCreds: REST_CREDENTIALS | null) => void
 ): IRoomControl {
   const urlParams = new URLSearchParams(window.location.search);
 
@@ -262,7 +261,7 @@ export function createRoomControls(
     }
   }
 
-  function joinRoom(token: string) {
+  function joinRoom(token: string, restCreds: REST_CREDENTIALS | null) {
     const roomName = roomNameInput.value;
     if (!roomName) {
       // eslint-disable-next-line no-alert
@@ -297,7 +296,7 @@ export function createRoomControls(
 
     Video.connect(token, connectOptions)
       .then(room => {
-        roomJoined(room, logger, envSelect.getValue());
+        roomJoined(room, logger, restCreds);
         // get new local identity for next join.
         localIdentity.value = randomParticipantName(); // randomName();
       }).catch(error => {
@@ -310,7 +309,15 @@ export function createRoomControls(
     setupLocalDescriptionOverride();
     try {
       const token = (await getRoomCredentials()).token;
-      return joinRoom(token);
+      let restCreds: REST_CREDENTIALS | null =  null;
+      if (extraInfo.checked) {
+        try {
+          restCreds = await getRestCreds(envSelect.getValue(), tokenServerUrlInput.value);
+        } catch (restError) {
+          log('failed to get rest credentials:', restError);
+        }
+      }
+      return joinRoom(token, restCreds);
     } catch (ex) {
       log('Failed: ', ex);
     }
@@ -319,7 +326,6 @@ export function createRoomControls(
   if (autoJoin.checked) {
     btnJoin.click();
   }
-
 
   // @ts-ignore
   const runPreflight =  Video.runPreflight;
@@ -354,8 +360,7 @@ export function createRoomControls(
 
         preflightTest.on('debug', (room1: Room, room2: Room) => {
           console.log('preflight debug:', room1, room2);
-          roomJoined(room1, logger, envSelect.getValue());
-          roomJoined(room2, logger,  envSelect.getValue());
+          roomJoined(room2, logger,  null);
         });
 
         preflightTest.on('progress', (progress: string)  => {
@@ -380,8 +385,6 @@ export function createRoomControls(
   return {
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked,
-    renderExtraInfo: () => extraInfo.checked,
-    getServerUrl: () => tokenServerUrlInput.value,
     getRoomControlsDiv: () => innerDiv
   };
 }

@@ -1,6 +1,7 @@
 import { createDiv } from './components/createDiv';
 import {
   RemoteParticipant,
+  Room,
   Track
 } from 'twilio-video';
 import { createHeader } from './createHeader';
@@ -14,6 +15,8 @@ export type IRenderedRemoteParticipant = {
 
 import jss from './jss'
 import { createLabeledStat } from './components/labeledstat';
+import { REST_CREDENTIALS } from './getCreds';
+import { createButton } from './components/button';
 // Create your style.
 const style = {
   background_gray: {
@@ -68,13 +71,51 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
+function remoteParticipantRestAPI(participant: RemoteParticipant, container: HTMLElement, room: Room, restCreds: REST_CREDENTIALS) {
+  createButton('copy exclude participant', container, () => {
+    const command = `curl -X POST '${restCreds.restUrl}/v1/Rooms/${room.sid}/Participants/${room.localParticipant.sid}/SubscribeRules' \
+    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'Rules=[{"type": "include", "all": true},{"type": "exclude", "publisher": "${participant.sid}"}]'`;
+    navigator.clipboard.writeText(command);
+  });
 
-export function renderRemoteParticipant(participant: RemoteParticipant, container: HTMLElement, shouldAutoAttach: () => boolean): IRenderedRemoteParticipant {
+  createButton('exclude participant', container, async () => {
+    try {
+      const fetchResult = await fetch(`${restCreds.restUrlNoCreds}/v1/Rooms/${room.sid}/Participants/${room.localParticipant.sid}/SubscribeRules`, {
+        body: `Rules=[{"type": "include", "all": true},{"type": "exclude", "publisher": "${participant.sid}"}]`,
+        headers: {
+          "authorization": 'Basic ' + btoa(restCreds.signingKeySid + ":" + restCreds.signingKeySecret),
+          "content-type": "application/x-www-form-urlencoded",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "cross-site"
+        },
+        method: "POST"
+      });
+      if (fetchResult.ok) {
+        const json = await fetchResult.json();
+        console.log('fetchResult.json = ', json);
+      } else {
+        console.log('Failed to exclude participant: ', fetchResult);
+        throw new Error('exclude participant error');
+      }
+    } catch (ex) {
+      console.log('Failed to fetch:', ex);
+      throw new Error('Failed to fetch: ' + ex);
+    }
+  });
+}
+
+
+export function renderRemoteParticipant(participant: RemoteParticipant, container: HTMLElement, room: Room, restCreds: REST_CREDENTIALS | null, shouldAutoAttach: () => boolean): IRenderedRemoteParticipant {
   container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
-
   createLabeledStat({ container, label: 'class' }).setText('RemoteParticipant');
   createLabeledStat({ container, label: 'identity' }).setText(participant.identity);
   createLabeledStat({ container, label: 'sid' }).setText(participant.sid);
+
+  if (restCreds !== null) {
+    remoteParticipantRestAPI(participant, container, room, restCreds);
+  }
   const participantMedia = createDiv(container, sheet.classes.participantMediaDiv);
   const renderedPublications = new Map<Track.SID, IRenderedRemoteTrackPublication>();
   participant.tracks.forEach(publication => {

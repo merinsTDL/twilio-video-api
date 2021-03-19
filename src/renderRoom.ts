@@ -4,7 +4,7 @@ import { createDiv } from './components/createDiv';
 import { createLabeledStat } from './components/labeledstat';
 import { createLink } from './components/createLink';
 import { createSelection } from './components/createSelection';
-import { getCreds } from './getCreds';
+import { REST_CREDENTIALS } from './getCreds';
 import { log as log2 } from './components/log';
 import { updateTrackStats } from './renderLocalTrack';
 import {
@@ -80,30 +80,20 @@ const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
 
-async function renderExtraRoomInformation({ room, container, env, getServerUrl }:
+async function renderExtraRoomInformation({ room, container, restCreds }:
   {
     room: Room,
     container: HTMLElement,
-    env: string,
-    getServerUrl: () => string,
+    restCreds: REST_CREDENTIALS,
   }) {
-  let credentialsAt;
-  let creds: { signingKeySid: any; signingKeySecret: any; };
-  try {
-    creds = await getCreds(env, getServerUrl());
-    credentialsAt = `${creds.signingKeySid}:${creds.signingKeySecret}@`;
-  } catch (e) {
-    log2('failed to load credentials: ', e);
-    credentialsAt = '';
-  }
-
-  const baseUrl = env === 'prod' ? `https://${credentialsAt}video.twilio.com` : `https://${credentialsAt}video.${env}.twilio.com`;
+  const credentialsAt = `${restCreds.signingKeySid}:${restCreds.signingKeySecret}@`;
+  const baseUrl = restCreds.restUrl;
 
   createLink({ container, linkText: 'RecordingRules', linkUrl: `${baseUrl}/v1/Rooms/${room.sid}/RecordingRules`, newTab: true });
 
   createButton('copy start recording', container, () => {
     const command = `curl -X POST '${baseUrl}/v1/Rooms/${room.sid}/RecordingRules' \
-    -u '${creds.signingKeySid}:${creds.signingKeySecret}' \
+    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'Rules=[{"type": "include", "all": "true"}]'`;
     navigator.clipboard.writeText(command);
@@ -111,11 +101,12 @@ async function renderExtraRoomInformation({ room, container, env, getServerUrl }
 
   createButton('copy stop recording', container, () => {
     const command = `curl -X POST '${baseUrl}/v1/Rooms/${room.sid}/RecordingRules' \
-    -u '${creds.signingKeySid}:${creds.signingKeySecret}' \
+    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'Rules=[{"type": "exclude", "all": "true"}]'`;
     navigator.clipboard.writeText(command);
   });
+
 
   createLink({ container, linkText: `/v1/Rooms/${room.sid}`, linkUrl: `${baseUrl}/v1/Rooms/${room.sid}`, newTab: true });
 
@@ -132,7 +123,6 @@ async function renderExtraRoomInformation({ room, container, env, getServerUrl }
   // });
 }
 
-
 function getCurrentLoggerLevelAsString(logger: Log.Logger): string {
   const currentLevel = logger.getLevel();
   console.log('logger currentLevel = ', currentLevel);
@@ -147,13 +137,10 @@ function getCurrentLoggerLevelAsString(logger: Log.Logger): string {
   return currentLevelStr;
 }
 
-export async function renderRoomDetails({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env = 'prod', logger }: {
+export async function renderRoomDetails({ room, container, restCreds, logger }: {
   room: Room,
   container: HTMLElement,
-  shouldAutoAttach: () => boolean,
-  renderExtraInfo: () => boolean,
-  getServerUrl: () => string,
-  env?: string,
+  restCreds: REST_CREDENTIALS|null,
   logger: Log.Logger
 }) {
   const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `sid:${room.sid}`, divClass: sheet.classes.roomContainer });
@@ -173,8 +160,8 @@ export async function renderRoomDetails({ room, container, shouldAutoAttach, ren
 
   logLevelSelect.setValue(currentLevel);
 
-  if (renderExtraInfo()) {
-    await renderExtraRoomInformation({ env, room, container, getServerUrl  });
+  if (restCreds !== null) {
+    renderExtraRoomInformation({ room, container, restCreds });
   }
 
   // createLabeledStat({ container, label: 'sid' }).setText(room.sid);
@@ -263,13 +250,11 @@ export async function renderRoomDetails({ room, container, shouldAutoAttach, ren
 }
 
 
-export async function renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env = 'prod', logger }: {
+export async function renderRoom({ room, container, shouldAutoAttach, restCreds, logger }: {
   room: Room,
   container: HTMLElement,
   shouldAutoAttach: () => boolean,
-  renderExtraInfo: () => boolean,
-  getServerUrl: () => string,
-  env?: string,
+  restCreds: REST_CREDENTIALS|null,
   logger: Log.Logger
 }) {
 
@@ -278,7 +263,7 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   createLabeledStat({ container, label: 'class' }).setText('Room');
 
   // const { innerDiv: roomDetailsInner }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
-  renderRoomDetails({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger});
+  renderRoomDetails({ room, container, restCreds, logger});
   const btnDisconnect = createButton('disconnect', container, () => {
     room.disconnect();
     collapsible.remove();
@@ -295,12 +280,12 @@ export async function renderRoom({ room, container, shouldAutoAttach, renderExtr
   const renderedParticipants = new Map<Participant.SID, IRenderedRemoteParticipant>();
   const remoteParticipantsContainer = createDiv(container, sheet.classes.remoteParticipants, 'remote-participants');
   room.participants.forEach(participant => {
-    renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
+    renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, room, restCreds, shouldAutoAttach));
   });
 
   // When a Participant joins the Room, log the event.
   room.on('participantConnected', participant => {
-    renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, shouldAutoAttach));
+    renderedParticipants.set(participant.sid, renderRemoteParticipant(participant, remoteParticipantsContainer, room, restCreds, shouldAutoAttach));
   });
 
   // When a Participant leaves the Room, detach its Tracks.

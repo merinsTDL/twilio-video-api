@@ -13,6 +13,7 @@ import { createRoomControls } from './createRoomControls';
 import { renderRoom } from './renderRoom';
 import jss from './jss'
 import { createLink } from './components/createLink';
+import { REST_CREDENTIALS } from './getCreds';
 
 // Create your style.
 const style = {
@@ -54,7 +55,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
 
   // @ts-ignore
   window.Twilio = { Video, rooms };
-  const  { shouldAutoAttach, shouldAutoPublish, renderExtraInfo, getServerUrl, getRoomControlsDiv } = createRoomControls(
+  const  { shouldAutoAttach, shouldAutoPublish, getRoomControlsDiv } = createRoomControls(
     container,
     Video,
     localTracks,
@@ -73,12 +74,12 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   });
 
   // Successfully connected!
-  function roomJoined(room: Room, logger : typeof Logger, env: string) {
+  function roomJoined(room: Room, logger : typeof Logger, restCreds: REST_CREDENTIALS | null) {
     logger = logger || Video.Logger.getLogger('twilio-video');
     rooms.push(room);
     roomAdded(room);
     log(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
-    renderRoom({ room, container, shouldAutoAttach, renderExtraInfo, getServerUrl, env, logger });
+    renderRoom({ room, container, shouldAutoAttach, restCreds, logger });
     room.on('disconnected', (_, err) => {
       log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {
