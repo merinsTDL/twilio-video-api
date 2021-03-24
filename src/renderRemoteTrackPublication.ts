@@ -160,15 +160,16 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
           renderHint.setText(`enabled=false`);
         });
         createButton('320x240', trackBytesDiv, () => {
-          setRenderHint({ enabled: true, renderDimension: { width:  160, height: 120 } });
-          renderHint.setText(`renderDimension=320x240`);
+          const renderDimensions = { width:  160, height: 120 };
+          setRenderHint({ enabled: true, renderDimensions });
+          renderHint.setText(`renderDimensions=320x240`);
         });
         createButton('1280x720', trackBytesDiv, () => {
-          setRenderHint({ enabled: true, renderDimension: { width: 1280, height: 720 } });
-          renderHint.setText(`renderDimension=1280x720`);
+          const renderDimensions = { width: 1280, height: 720 };
+          setRenderHint({ enabled: true, renderDimensions });
+          renderHint.setText(`renderDimensions=1280x720`);
         });
       }
-
     } else {
       console.warn('CanRender returned false for ', track);
     }
