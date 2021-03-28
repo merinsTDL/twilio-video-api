@@ -54,7 +54,9 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   const rooms: Room[] = [];
 
   // @ts-ignore
-  window.Twilio = { Video, rooms };
+  window._TwilioVideo = { Video, rooms };
+  // @ts-ignore
+  window.rooms = rooms;
   const  { shouldAutoAttach, shouldAutoPublish, getRoomControlsDiv } = createRoomControls(
     container,
     Video,
