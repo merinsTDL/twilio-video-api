@@ -218,11 +218,13 @@ export function createRoomControls(
   //   "iceTransportPolicy" : "relay"
   // };
   const defaultOptions = {
-    networkQuality: { local: 3, remote: 0 },
+    networkQuality: { local: 1, remote: 0 },
     dominantSpeaker: true,
+    preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }],
     bandwidthProfile: {
       video: {
-        maxTracks: 1
+        subscribedTrackSwitchOffMode: 'manual',
+        contentPreferencesMode: 'manual',
       }
     }
   };

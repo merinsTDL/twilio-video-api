@@ -149,27 +149,27 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
         priority.setText(`${track.priority}`);
       });
 
-      // @ts-ignore
-      if (typeof track._setRenderHint === 'function') {
-        // @ts-ignore
-        const setRenderHint = track._setRenderHint.bind(track);
-        const renderHint = createLabeledStat({ container: trackBytesDiv, label: 'renderHint' });
-        renderHint.setText(`none`);
-        createButton('disable', trackBytesDiv, () => {
-          setRenderHint({ enabled: false });
-          renderHint.setText(`enabled=false`);
-        });
-        createButton('320x240', trackBytesDiv, () => {
-          const renderDimensions = { width:  160, height: 120 };
-          setRenderHint({ enabled: true, renderDimensions });
-          renderHint.setText(`renderDimensions=320x240`);
-        });
-        createButton('1280x720', trackBytesDiv, () => {
-          const renderDimensions = { width: 1280, height: 720 };
-          setRenderHint({ enabled: true, renderDimensions });
-          renderHint.setText(`renderDimensions=1280x720`);
-        });
-      }
+      const renderHint = createLabeledStat({ container: trackBytesDiv, label: 'renderHint' });
+      renderHint.setText(`none`);
+      const videoTrack = track as RemoteVideoTrack;
+      createButton('switchOff', trackBytesDiv, () => {
+        videoTrack.switchOff();
+        renderHint.setText(`off`);
+      });
+      createButton('switchOn', trackBytesDiv, () => {
+        videoTrack.switchOn();
+        renderHint.setText(`on`);
+      });
+      createButton('160x120', trackBytesDiv, () => {
+        const renderDimensions = { width:  160, height: 120 };
+        videoTrack.setContentPreferences({ renderDimensions });
+        renderHint.setText(`renderDimensions=160x120`);
+      });
+      createButton('1280x720', trackBytesDiv, () => {
+        const renderDimensions = { width: 1280, height: 720 };
+        videoTrack.setContentPreferences({ renderDimensions });
+        renderHint.setText(`renderDimensions=1280x720`);
+      });
     } else {
       console.warn('CanRender returned false for ', track);
     }
