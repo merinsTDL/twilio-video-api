@@ -223,7 +223,7 @@ export function createRoomControls(
     preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }],
     bandwidthProfile: {
       video: {
-        subscribedTrackSwitchOffMode: 'manual',
+        clientTrackSwitchOffControl: 'manual',
         contentPreferencesMode: 'manual',
       }
     }
