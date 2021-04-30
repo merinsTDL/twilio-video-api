@@ -10,13 +10,12 @@ import { updateTrackStats } from './renderLocalTrack';
 import {
   Log,
   Room,
-  LocalAudioTrackStats,
   LocalVideoTrackStats,
   RemoteAudioTrackStats,
   RemoteVideoTrackStats,
-  Participant
+  Participant,
+  Track
 } from 'twilio-video';
-import { createHeader } from './createHeader';
 import { IRenderedRemoteParticipant, renderRemoteParticipant } from './renderRemoteParticipant';
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
@@ -250,7 +249,6 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
 
 }
 
-
 export async function renderRoom({ room, container, shouldAutoAttach, restCreds, logger }: {
   room: Room,
   container: HTMLElement,
@@ -300,21 +298,33 @@ export async function renderRoom({ room, container, shouldAutoAttach, restCreds,
   var statUpdater = setInterval(async () => {
     const statReports = await room.getStats();
     statReports.forEach(statReport => {
-      [
-        statReport.localAudioTrackStats,
-        statReport.localVideoTrackStats,
-      ].forEach(trackStatArr => {
-        trackStatArr.forEach((trackStat: LocalAudioTrackStats | LocalVideoTrackStats) => {
-          const { trackId, trackSid, bytesSent, timestamp } = trackStat;
-          updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp });
-        })
+      // statReport.localVideoTrackStats, can have multiple entries for a local video tracks when simulcast is enabled.
+      // fold them into single entry.
+      const videoTrackStats = new Map<string, { trackId: Track.SID, trackSid: Track.SID, timestamp: number, bytesSent: number}>();
+      statReport.localVideoTrackStats.forEach((trackStat: LocalVideoTrackStats) => {
+        let track = videoTrackStats.get(trackStat.trackSid);
+        if (track) {
+          track.bytesSent += (trackStat.bytesSent || 0);
+        } else {
+          let { trackId, trackSid, bytesSent, timestamp } = trackStat;
+          bytesSent = bytesSent || 0;
+          videoTrackStats.set(trackStat.trackSid, { trackId, trackSid, bytesSent, timestamp });
+        }
+      });
+
+      Array.from(videoTrackStats.values()).forEach(({ trackId, trackSid, bytesSent, timestamp }) => {
+        updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp });
+      });
+
+      statReport.localAudioTrackStats.forEach(({ trackId, trackSid, bytesSent, timestamp }) => {
+        updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp });
       });
 
       [
         statReport.remoteVideoTrackStats,
         statReport.remoteAudioTrackStats,
       ].forEach(trackStatArr => {
-        trackStatArr.forEach((trackStat: RemoteAudioTrackStats |RemoteVideoTrackStats) => {
+        trackStatArr.forEach((trackStat: RemoteAudioTrackStats | RemoteVideoTrackStats) => {
           const { trackSid, timestamp } = trackStat;
           const bytesReceived = trackStat.bytesReceived || 0;
           renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
@@ -322,7 +332,6 @@ export async function renderRoom({ room, container, shouldAutoAttach, restCreds,
           })
         })
       });
-
     })
   }, 1000);
 
