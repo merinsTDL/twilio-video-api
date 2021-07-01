@@ -69,6 +69,13 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     }));
   }
 
+  function renderStandAloneMediaStreamTrack({ msTrack, autoAttach = true } : { msTrack: MediaStreamTrack, autoAttach: boolean }) {
+    const localTrack = msTrack.kind === 'video' ?
+      new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: 'my-video' }) :
+      new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: 'my-audio' });
+    renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
+  }
+
   // eslint-disable-next-line no-unused-vars
   const btnPreviewAudio = createButton('+ Local Audio', localTrackButtonsContainer, async () => {
     const thisTrackName = 'mic-' + number++;
@@ -141,5 +148,6 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     roomRemoved: (room: Room) => {
       renderedTracks.forEach((renderedTrack => renderedTrack.roomRemoved(room)));
     },
+    renderStandAloneMediaStreamTrack,
   };
 }

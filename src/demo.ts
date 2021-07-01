@@ -14,6 +14,8 @@ import { renderRoom } from './renderRoom';
 import jss from './jss'
 import { createLink } from './components/createLink';
 import { REST_CREDENTIALS } from './getCreds';
+import { setupPreflight } from './setupPreflight';
+import { createButton } from './components/button';
 
 // Create your style.
 const style = {
@@ -57,7 +59,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   window._TwilioVideo = { Video, rooms };
   // @ts-ignore
   window.rooms = rooms;
-  const  { shouldAutoAttach, shouldAutoPublish, getRoomControlsDiv } = createRoomControls(
+  const  { shouldAutoAttach, shouldAutoPublish, getRoomControlsDiv, getRoomCredentials } = createRoomControls(
     container,
     Video,
     localTracks,
@@ -65,7 +67,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   );
 
   const buttonContainer = getRoomControlsDiv();
-  const { roomAdded, roomRemoved } = createLocalTracksControls({
+  const { roomAdded, roomRemoved, renderStandAloneMediaStreamTrack } = createLocalTracksControls({
     buttonContainer,
     container,
     Video,
@@ -73,6 +75,18 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     rooms,
     shouldAutoAttach,
     shouldAutoPublish,
+  });
+
+  createButton('setupPreflight', buttonContainer, async () => {
+    const creds = await getRoomCredentials();
+    setupPreflight({
+      container: buttonContainer,
+      token: creds.token,
+      Video,
+      environment: creds.environment,
+      trackContainer: buttonContainer,
+      renderLocalTrack: msTrack => renderStandAloneMediaStreamTrack({ msTrack, autoAttach: shouldAutoAttach()})
+    })
   });
 
   // Successfully connected!

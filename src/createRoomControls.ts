@@ -9,7 +9,7 @@ import { createLink } from './components/createLink';
 import { createSelection } from './components/createSelection';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { log } from './components/log';
-import { Log, LocalTrack, Room, RemoteParticipant, RemoteTrack, RemoteTrackPublication } from 'twilio-video';
+import { Log, LocalTrack, Room } from 'twilio-video';
 
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
@@ -106,6 +106,7 @@ export interface IRoomControl {
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean,
   getRoomControlsDiv: () => HTMLDivElement
+  getRoomCredentials: () => Promise<{ token: string, environment: string }>
 };
 
 export function createRoomControls(
@@ -205,7 +206,7 @@ export function createRoomControls(
   // process parameters.
   roomNameInput.value = urlParams.get('room') || randomRoomName();
   localIdentity.value = urlParams.get('identity') || randomParticipantName(); // randomName();
-  tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
+  tokenServerUrlInput.value = urlParams.get('server') || 'http://8dd36770b581.ngrok.io' // 'http://localhost:3000';
   maxParticipantsInput.value = urlParams.get('maxParticipants') || '';
 
   // for working with dev env use:
@@ -238,7 +239,7 @@ export function createRoomControls(
   topologySelect.setValue(urlParams.get('topology') || 'group-small');
   envSelect.setValue(urlParams.get('env') || 'prod');
 
-  async function getRoomCredentials(): Promise<{token: string}> {
+  async function getRoomCredentials(): Promise<{token: string, environment: string}> {
     const identity = localIdentity.value || randomParticipantName(); // randomName();
     let tokenServerUrl = tokenServerUrlInput.value;
     const topology = topologySelect.getValue();
@@ -255,7 +256,8 @@ export function createRoomControls(
     try {
       const response = await fetch(url.toString());
       if (response.ok) {
-        return response.json();
+        const tokenResponse = await response.json();
+        return { token: tokenResponse.token,  environment };
       }
       throw new Error(`Failed to obtain token from ${url}, Status: ${response.status}`);
     } catch (ex) {
@@ -329,65 +331,12 @@ export function createRoomControls(
     btnJoin.click();
   }
 
-  // @ts-ignore
-  const runPreflight =  Video.runPreflight;
-
-  // @ts-ignore
-  const testPreflight = Video.testPreflight;
-  if (typeof runPreflight === 'function' || typeof testPreflight === 'function') {
-    let preflightTest: any = null;
-    createButton('prepare preflight', innerDiv, async () => {
-      localIdentity.value = 'Alice';
-      const aliceToken = (await getRoomCredentials()).token;
-      localIdentity.value = 'Bob';
-      const bobToken = (await getRoomCredentials()).token;
-      createButton('runPreflight', innerDiv, async () => {
-        const logger = Video.Logger.getLogger('twilio-video');
-        logger.setLevel('DEBUG');
-        console.log('starting runPreflight');
-        const environment = envSelect.getValue();
-
-        // preflightTest = runPreflight(aliceToken, { duration: 100000, environment, preferredVideoCodecs: [{ codec:"VP8", simulcast: true }]});
-        // preflightTest = testPreflight(aliceToken, bobToken, { duration: 10000, environment });
-        if (runPreflight) {
-          preflightTest = runPreflight(aliceToken, { duration: 100000, environment });
-        } else {
-          preflightTest = testPreflight(aliceToken, { duration: 100000, environment });
-        }
-        const deferred: { reject?: (e: Error) => void, resolve?: (report: any) => void, promise?: Promise<any> } = {};
-        deferred.promise = new Promise((resolve, reject) => {
-          deferred.resolve = resolve;
-          deferred.reject = reject;
-        });
-
-        preflightTest.on('debug', (room1: Room, room2: Room) => {
-          console.log('preflight debug:', room1, room2);
-          roomJoined(room2, logger,  null);
-        });
-
-        preflightTest.on('progress', (progress: string)  => {
-          console.log('preflight progress:', progress);
-        });
-
-        preflightTest.on('failed', (error: Error) => {
-          console.error('preflight error:', error);
-          deferred.reject && deferred.reject(error);
-        });
-
-        preflightTest.on('completed', (report: any) => {
-          console.log('preflight completed:', JSON.stringify(report, null, 4));
-          deferred.resolve && deferred.resolve(report);
-        });
-
-        await deferred.promise;
-      });
-    });
-  }
-
   return {
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked,
-    getRoomControlsDiv: () => innerDiv
+    getRoomControlsDiv: () => innerDiv,
+    getRoomCredentials,
   };
 }
+
 
