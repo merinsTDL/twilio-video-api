@@ -1,15 +1,14 @@
 import { createButton } from './components/button';
+import { log } from './components/log';
 import { PreflightTest, PreflightTestReport } from 'twilio-video';
-import { renderLocalTrack } from './renderLocalTrack';
 
-export function setupPreflight({ container, token, Video, environment, trackContainer, renderLocalTrack } :
+export function setupPreflight({ container, token, Video, environment, renderMSTrack } :
   {
     container: HTMLDivElement,
     token: string,
     Video: typeof import('twilio-video'),
-    trackContainer: HTMLDivElement,
     environment: string
-    renderLocalTrack: (track: MediaStreamTrack) => void
+    renderMSTrack: (track: MediaStreamTrack) => void
   }) {
   const runPreflight = Video.runPreflight;
   let preflightTest: PreflightTest | null = null;
@@ -18,6 +17,7 @@ export function setupPreflight({ container, token, Video, environment, trackCont
       // stop on going preflight test
       preflightTest.stop();
       flightBtn.text('runPreflight');
+      preflightTest = null;
     } else {
       flightBtn.text('stop');
       const logger = Video.Logger.getLogger('twilio-video');
@@ -31,29 +31,39 @@ export function setupPreflight({ container, token, Video, environment, trackCont
       });
 
       preflightTest.on('progress', (progress: string) => {
-        console.log('preflight progress:', progress);
+        log('preflight progress:', progress);
       });
 
       preflightTest.on('failed', (error: Error) => {
+        log('preflight error:', error);
         console.error('preflight error:', error);
         deferred.reject && deferred.reject(error);
       });
 
       preflightTest.on('completed', (report: PreflightTestReport) => {
-        console.log('preflight completed:', JSON.stringify(report, null, 4));
+        log("Test completed in " + report.testTiming.duration + " milliseconds.");
+        log(" It took " + report.networkTiming.connect?.duration + " milliseconds to connect");
+        log(" It took " + report.networkTiming.media?.duration + " milliseconds to receive media");
+        log(" makarand Your quality score was " + report.qualityScore);
+        log('preflight completed:', report);
         deferred.resolve && deferred.resolve(report);
       });
 
       // @ts-ignore
       preflightTest.on('debug', payload => {
+        if (payload.localTracks) {
+          console.log('got debug localTracks:', payload.localTracks);
+          payload.localTracks.forEach((track: MediaStreamTrack) => {
+            const msTrack = track as MediaStreamTrack;
+            renderMSTrack(msTrack);
+          });
+        }
+
         if (payload.remoteTracks) {
-          console.log('got debug tracks', payload.remoteTracks);
+          console.log('got debug remoteTracks:', payload.remoteTracks);
           payload.remoteTracks.forEach((track: MediaStreamTrack) => {
             const msTrack = track as MediaStreamTrack;
-            const localTrack = msTrack.kind === 'video' ?
-              new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: 'my-video' }) :
-              new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: 'my-audio' });
-            renderLocalTrack(msTrack);
+            renderMSTrack(msTrack);
           });
         }
       });

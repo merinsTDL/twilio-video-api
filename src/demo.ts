@@ -41,6 +41,13 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
+function checkVisibility() {
+  document.addEventListener('visibilitychange', () => {
+    log(`document.visibilityState = ${document.visibilityState}`);
+    console.log('makarand: document.visibilityState = ', document.visibilityState);
+  });
+}
+
 export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
   // link to source code
   createLink({ container: containerDiv, linkText: 'Twilio-Video-API-Demo', linkUrl: 'https://github.com/makarandp0/twilio-video-api', newTab: true });
@@ -54,6 +61,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
 
   const localTracks: LocalTrack[] = [];
   const rooms: Room[] = [];
+  checkVisibility();
 
   // @ts-ignore
   window._TwilioVideo = { Video, rooms };
@@ -77,6 +85,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     shouldAutoPublish,
   });
 
+
   createButton('setupPreflight', buttonContainer, async () => {
     const creds = await getRoomCredentials();
     setupPreflight({
@@ -84,8 +93,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
       token: creds.token,
       Video,
       environment: creds.environment,
-      trackContainer: buttonContainer,
-      renderLocalTrack: msTrack => renderStandAloneMediaStreamTrack({ msTrack, autoAttach: shouldAutoAttach()})
+      renderMSTrack: msTrack => renderStandAloneMediaStreamTrack({ msTrack, autoAttach: shouldAutoAttach()})
     })
   });
 

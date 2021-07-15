@@ -71,8 +71,8 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
 
   function renderStandAloneMediaStreamTrack({ msTrack, autoAttach = true } : { msTrack: MediaStreamTrack, autoAttach: boolean }) {
     const localTrack = msTrack.kind === 'video' ?
-      new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: 'my-video' }) :
-      new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: 'my-audio' });
+      new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: 'my-video', workaroundWebKitBug1208516: false }) :
+      new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: 'my-audio', workaroundWebKitBug1208516: false });
     renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
   }
 
