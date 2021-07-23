@@ -75,9 +75,11 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
   });
 
   let dimensions: ILabeledStat;
+  let fps: ILabeledStat;
   if (isVideoTrack(track)) {
     dimensions = createLabeledStat({ container, label: 'dimensions' });
     track.on('dimensionsChanged', () => updateStats());
+    fps = createLabeledStat({ container, label: 'FPS' });
   }
 
   const started = createLabeledStat({
@@ -116,6 +118,10 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     if (isVideoTrack(track)) {
       const { width, height } = track.dimensions;
       dimensions.setText(`w${width} x h${height}`);
+
+      const frameRate = track.mediaStreamTrack.getSettings().frameRate;
+      const frameRateText = typeof frameRate === 'number' ? String(Math.round(frameRate)) : '0';
+      fps.setText(frameRateText);
     }
   }
 

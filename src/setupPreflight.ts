@@ -56,6 +56,11 @@ export function setupPreflight({ container, token, Video, environment, renderMST
           payload.localTracks.forEach((track: MediaStreamTrack) => {
             const msTrack = track as MediaStreamTrack;
             renderMSTrack(msTrack);
+            // // @ts-ignore
+            // const canvas = msTrack.canvas;
+            // if (canvas) {
+            //   container.appendChild(canvas);
+            // }
           });
         }
 

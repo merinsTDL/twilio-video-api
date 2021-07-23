@@ -9,7 +9,7 @@ import { IRenderedRemoteTrackPublication, renderRemoteTrackPublication } from ".
 
 export type IRenderedRemoteParticipant = {
   container: HTMLElement;
-  updateStats: ({ trackSid, bytesReceived, timestamp } : { trackSid: string, bytesReceived: number, timestamp: number }) => void;
+  updateStats: ({ trackSid, bytesReceived, timestamp } : { trackSid: string, bytesReceived: number, timestamp: number, fps: number|null }) => void;
   stopRendering: () => void;
 }
 
@@ -136,10 +136,14 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
   });
   return {
     container,
-    updateStats: ({ trackSid, bytesReceived, timestamp }: { trackSid: string; bytesReceived: number; timestamp: number; }) => {
+    updateStats: ({ trackSid, bytesReceived, timestamp, fps }: { trackSid: string; bytesReceived: number; timestamp: number; fps: number|null}) => {
       renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
         if (trackSid === renderedTrackSid) {
           renderedTrackpublication.setBytesReceived(bytesReceived, timestamp);
+          if (fps !== null) {
+            console.log('TrackFPS: ', fps)
+            renderedTrackpublication.setFPS(fps);
+          }
         }
       });
     },

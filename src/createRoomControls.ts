@@ -206,7 +206,7 @@ export function createRoomControls(
   // process parameters.
   roomNameInput.value = urlParams.get('room') || randomRoomName();
   localIdentity.value = urlParams.get('identity') || randomParticipantName(); // randomName();
-  tokenServerUrlInput.value = urlParams.get('server') || 'http://8dd36770b581.ngrok.io' // 'http://localhost:3000';
+  tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
   maxParticipantsInput.value = urlParams.get('maxParticipants') || '';
 
   // for working with dev env use:
@@ -230,7 +230,7 @@ export function createRoomControls(
     }
   };
 
-  extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions);
+  extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions, null, 4);
   autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
   autoAttach.checked = getBooleanUrlParam('autoAttach', true);
   autoPublish.checked = getBooleanUrlParam('autoPublish', true);

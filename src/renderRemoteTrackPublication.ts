@@ -76,6 +76,7 @@ sheet.attach();
 
 export type IRenderedRemoteTrackPublication = {
   setBytesReceived: (bytesReceived: number, timestamp: number) => void;
+  setFPS: (fps: number) => void;
   trackPublication: RemoteTrackPublication;
   container: HTMLElement;
   stopRendering: () => void;
@@ -91,6 +92,7 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
 
   let renderedTrack: { stopRendering: any; trackContainer?: any; track?: any; updateStats?: () => void; } | null;
   let statBytes: ILabeledStat;
+  let trackFPS: ILabeledStat;
 
   function canRenderTrack(track: any): track is LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack {
     return track;
@@ -99,6 +101,7 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
   function renderRemoteTrack() {
     const track = trackPublication.track;
     if (canRenderTrack(track)) {
+      const videoTrack = track.kind === 'video' ? track as RemoteVideoTrack : null;
       renderedTrack = renderTrack({
         track,
         container,
@@ -111,6 +114,13 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
         valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
       });
       statBytes.setText('0');
+      if (videoTrack) {
+        trackFPS = createLabeledStat({
+          container: trackBytesDiv,
+          label: 'fps',
+          valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
+        });
+      }
 
       const publisherPriority = createLabeledStat({ container: trackBytesDiv, label: 'publisher priority' });
       publisherPriority.setText(`${trackPublication.publishPriority}`);
@@ -149,27 +159,28 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
         priority.setText(`${track.priority}`);
       });
 
-      const renderHint = createLabeledStat({ container: trackBytesDiv, label: 'renderHint' });
-      renderHint.setText(`none`);
-      const videoTrack = track as RemoteVideoTrack;
-      createButton('switchOff', trackBytesDiv, () => {
-        videoTrack.switchOff();
-        renderHint.setText(`off`);
-      });
-      createButton('switchOn', trackBytesDiv, () => {
-        videoTrack.switchOn();
-        renderHint.setText(`on`);
-      });
-      createButton('160x120', trackBytesDiv, () => {
-        const renderDimensions = { width:  160, height: 120 };
-        videoTrack.setContentPreferences({ renderDimensions });
-        renderHint.setText(`renderDimensions=160x120`);
-      });
-      createButton('1280x720', trackBytesDiv, () => {
-        const renderDimensions = { width: 1280, height: 720 };
-        videoTrack.setContentPreferences({ renderDimensions });
-        renderHint.setText(`renderDimensions=1280x720`);
-      });
+      if (videoTrack) {
+        const renderHint = createLabeledStat({ container: trackBytesDiv, label: 'renderHint' });
+        renderHint.setText(`none`);
+        createButton('switchOff', trackBytesDiv, () => {
+          videoTrack.switchOff();
+          renderHint.setText(`off`);
+        });
+        createButton('switchOn', trackBytesDiv, () => {
+          videoTrack.switchOn();
+          renderHint.setText(`on`);
+        });
+        createButton('160x120', trackBytesDiv, () => {
+          const renderDimensions = { width:  160, height: 120 };
+          videoTrack.setContentPreferences({ renderDimensions });
+          renderHint.setText(`renderDimensions=160x120`);
+        });
+        createButton('1280x720', trackBytesDiv, () => {
+          const renderDimensions = { width: 1280, height: 720 };
+          videoTrack.setContentPreferences({ renderDimensions });
+          renderHint.setText(`renderDimensions=1280x720`);
+        });
+      }
     } else {
       console.warn('CanRender returned false for ', track);
     }
@@ -200,6 +211,9 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
         previousTime = timeStamp;
         statBytes.setText(bps.toString());
       }
+    },
+    setFPS: (fps: number) => {
+      trackFPS.setText(fps.toString());
     },
     trackPublication,
     container,

@@ -320,16 +320,19 @@ export async function renderRoom({ room, container, shouldAutoAttach, restCreds,
         updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp });
       });
 
-      [
-        statReport.remoteVideoTrackStats,
-        statReport.remoteAudioTrackStats,
-      ].forEach(trackStatArr => {
-        trackStatArr.forEach((trackStat: RemoteAudioTrackStats | RemoteVideoTrackStats) => {
-          const { trackSid, timestamp } = trackStat;
-          const bytesReceived = trackStat.bytesReceived || 0;
-          renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
-            renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp });
-          })
+      statReport.remoteAudioTrackStats.forEach((trackStat: RemoteAudioTrackStats) => {
+        const { trackSid, timestamp } = trackStat;
+        const bytesReceived = trackStat.bytesReceived || 0;
+        renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
+          renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp, fps: null });
+        })
+      });
+      statReport.remoteVideoTrackStats.forEach((trackStat: RemoteVideoTrackStats) => {
+        const { trackSid, timestamp, frameRate } = trackStat;
+        const bytesReceived = trackStat.bytesReceived || 0;
+        renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
+          console.log('TrackFPS: ', frameRate);
+          renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp, fps: frameRate });
         })
       });
     })
