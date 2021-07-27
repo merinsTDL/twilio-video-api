@@ -115,7 +115,10 @@ export function renderTrack({ track, container, autoAttach } : {
     track,
     updateStats,
     stopRendering: () => {
-      track.detach().forEach(element => element.remove());
+      track.detach().forEach(element => {
+        element.remove()
+        element.srcObject = null;
+      });
       trackContainer.remove();
       stopMediaRender();
     }

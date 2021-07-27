@@ -1,1 +1,1 @@
-ngrok http --host-header=rewrite 8080
+ngrok http -subdomain=videoapi --host-header=rewrite 8080
