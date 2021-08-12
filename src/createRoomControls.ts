@@ -9,7 +9,7 @@ import { createLink } from './components/createLink';
 import { createSelection } from './components/createSelection';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { log } from './components/log';
-import { Log, LocalTrack, Room } from 'twilio-video';
+import { Log, LocalTrack, Room, LocalDataTrack } from 'twilio-video';
 
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
@@ -87,11 +87,23 @@ const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
 function handleSDKLogs(logger: Log.Logger) {
+  let localDataTrack: LocalDataTrack|null = null;
+  let localIdentity: string|null = null;
   const originalFactory = logger.methodFactory;
   logger.methodFactory = function(methodName: string, level: Log.LogLevelNumbers, loggerName: string) {
     const method = originalFactory(methodName, level, loggerName);
     return function(dateTime: Date, logLevel: string, component: string, message: string, data: any) {
       method(dateTime, logLevel, component, message, data);
+      if (localDataTrack) {
+        localDataTrack.send(JSON.stringify({
+          localIdentity,
+          dateTime,
+          logLevel,
+          component,
+          message,
+          data
+        }));
+      }
       // check for signaling events that previously used to be
       // emitted on (now deprecated) eventListener
       // they are fired with message = `event`, and group == `signaling`
@@ -100,6 +112,14 @@ function handleSDKLogs(logger: Log.Logger) {
       }
     };
   };
+
+  // returns a function that allows sending logs to data channel.
+  return {
+    setLocalDataTrack: (dataTrack: LocalDataTrack, identity: string ) => {
+      localDataTrack = dataTrack;
+      localIdentity = identity;
+    }
+  }
 }
 
 export interface IRoomControl {
@@ -202,6 +222,7 @@ export function createRoomControls(
   const autoJoin = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Join', id: 'autoJoin' });
   const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Record Participant', id: 'recordParticipant' });
   const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extra Info', id: 'extraInfo' });
+  const sendLogs = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'send logs', id: 'sendLogs' });
 
   // process parameters.
   roomNameInput.value = urlParams.get('room') || randomRoomName();
@@ -236,6 +257,7 @@ export function createRoomControls(
   autoPublish.checked = getBooleanUrlParam('autoPublish', true);
   autoRecord.checked = getBooleanUrlParam('record', false);
   extraInfo.checked = getBooleanUrlParam('extraInfo', false);
+  sendLogs.checked = getBooleanUrlParam('sendLogs', false);
   topologySelect.setValue(urlParams.get('topology') || 'group-small');
   envSelect.setValue(urlParams.get('env') || 'prod');
 
@@ -265,7 +287,7 @@ export function createRoomControls(
     }
   }
 
-  function joinRoom(token: string, restCreds: REST_CREDENTIALS | null) {
+  async function joinRoom(token: string, restCreds: REST_CREDENTIALS | null) {
     const roomName = roomNameInput.value;
     if (!roomName) {
       // eslint-disable-next-line no-alert
@@ -283,11 +305,12 @@ export function createRoomControls(
       }
     }
 
-    log(`Joining room ${roomName} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
     const loggerName = `[${localIdentity.value}]:`;
     const logger = Video.Logger.getLogger(loggerName);
-    handleSDKLogs(logger);
 
+    const publishLogsAsData = sendLogs.checked;
+
+    const logProcessor = handleSDKLogs(logger);
     const connectOptions = Object.assign({
       loggerName,
       tracks: autoPublish.checked ? localTracks : [],
@@ -296,16 +319,20 @@ export function createRoomControls(
     }, additionalConnectOptions);
     // Join the Room with the token from the server and the
     // LocalParticipant's Tracks.
-    log(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)}`);
+    log(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
 
-    Video.connect(token, connectOptions)
-      .then(room => {
-        roomJoined(room, logger, restCreds);
-        // get new local identity for next join.
-        localIdentity.value = randomParticipantName(); // randomName();
-      }).catch(error => {
-        log('Could not connect to Twilio: ' + error.message);
-      });
+    try {
+      const room = await Video.connect(token, connectOptions);
+      roomJoined(room, logger, restCreds);
+      localIdentity.value = randomParticipantName(); // randomName();
+      if (publishLogsAsData) {
+        const localDataTrack = new Video.LocalDataTrack();
+        await room.localParticipant.publishTrack(localDataTrack);
+        logProcessor.setLocalDataTrack(localDataTrack, loggerName);
+      }
+    } catch (error) {
+      log('Could not connect to Twilio: ' + error.message);
+    }
   }
 
   // eslint-disable-next-line consistent-return

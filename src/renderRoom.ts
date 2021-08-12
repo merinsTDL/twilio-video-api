@@ -331,7 +331,6 @@ export async function renderRoom({ room, container, shouldAutoAttach, restCreds,
         const { trackSid, timestamp, frameRate } = trackStat;
         const bytesReceived = trackStat.bytesReceived || 0;
         renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
-          console.log('TrackFPS: ', frameRate);
           renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp, fps: frameRate });
         })
       });

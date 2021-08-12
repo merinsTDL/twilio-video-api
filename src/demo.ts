@@ -17,6 +17,8 @@ import { REST_CREDENTIALS } from './getCreds';
 import { setupPreflight } from './setupPreflight';
 import { createButton } from './components/button';
 
+// import { main } from '../../makarandp0.github.io/pcdemo/es6/pcdemo';
+
 // Create your style.
 const style = {
   mainDiv: {
@@ -48,6 +50,11 @@ function checkVisibility() {
   });
 }
 
+
+// export function pcdemo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
+//   main(containerDiv);
+// }
+
 export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
   // link to source code
   createLink({ container: containerDiv, linkText: 'Twilio-Video-API-Demo', linkUrl: 'https://github.com/makarandp0/twilio-video-api', newTab: true });
@@ -61,7 +68,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
 
   const localTracks: LocalTrack[] = [];
   const rooms: Room[] = [];
-  checkVisibility();
+  // checkVisibility();
 
   // @ts-ignore
   window._TwilioVideo = { Video, rooms };

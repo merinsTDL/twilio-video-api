@@ -40,6 +40,6 @@
     "jss": "^10.5.0",
     "jss-preset-default": "^10.5.0",
     "style-loader": "^2.0.0",
-    "twilio-video": "github:twilio/twilio-video.js#4fca54da17a50052f33d9c1705d650b8b390404e"
+    "twilio-video": "2.16.0"
   }
 }

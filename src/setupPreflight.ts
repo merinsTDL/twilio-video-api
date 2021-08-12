@@ -44,7 +44,6 @@ export function setupPreflight({ container, token, Video, environment, renderMST
         log("Test completed in " + report.testTiming.duration + " milliseconds.");
         log(" It took " + report.networkTiming.connect?.duration + " milliseconds to connect");
         log(" It took " + report.networkTiming.media?.duration + " milliseconds to receive media");
-        log(" makarand Your quality score was " + report.qualityScore);
         log('preflight completed:', report);
         deferred.resolve && deferred.resolve(report);
       });
@@ -56,11 +55,6 @@ export function setupPreflight({ container, token, Video, environment, renderMST
           payload.localTracks.forEach((track: MediaStreamTrack) => {
             const msTrack = track as MediaStreamTrack;
             renderMSTrack(msTrack);
-            // // @ts-ignore
-            // const canvas = msTrack.canvas;
-            // if (canvas) {
-            //   container.appendChild(canvas);
-            // }
           });
         }
 

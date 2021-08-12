@@ -61,6 +61,7 @@ app supports various url parameters
 | autoVideo       | if specified app creates local video track at startup  |  `false`  |
 | autoAudio       | if specified app creates local audio track at startup  |  `false`  |
 | extraInfo       | if specified app renders links to room properties      |  `false`  |
+| sendLogs        | if specified app sends console logs over data channel. Useful for testing mobile->desktop | `false` |
 | maxParticipants | if 51 or larger then large group room is created  |  ``  |
 | topology        | type of room to use  |  `group-small`  |
 | env             | backend environment to use  |  `prod`  |

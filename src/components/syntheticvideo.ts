@@ -14,6 +14,7 @@ export function syntheticVideo({ width = 640, height = 480, word = 'hello' } = {
   // const wordWidth = ctx.measureText(word).width;
   let r = 0;
   let i = 0;
+  let stopped = false;
   requestAnimationFrame(function animate() {
     r += Math.PI / 180;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -25,8 +26,16 @@ export function syntheticVideo({ width = 640, height = 480, word = 'hello' } = {
     ctx.fillText(`${word}-${i}`, 0, 0);
     i++;
     ctx.restore();
-    requestAnimationFrame(animate);
+    if (!stopped) {
+      requestAnimationFrame(animate);
+    }
   });
   const stream = canvas.captureStream(10);
-  return stream.getTracks()[0];
+  const track =  stream.getTracks()[0];
+  const originalStop = track.stop;
+  track.stop = () => {
+    stopped = true;
+    originalStop.call(track);
+  };
+  return track;
 }
