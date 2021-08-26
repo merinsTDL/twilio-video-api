@@ -5,11 +5,12 @@ import { createElement } from './components/createElement';
 import { createLabeledStat, ILabeledStat } from './components/labeledstat';
 import { log } from './components/log';
 import { renderTrack } from './renderTrack';
-import { Room, LocalAudioTrack, LocalVideoTrack, Track, LocalTrackPublication } from 'twilio-video';
+import { Room, LocalAudioTrack, LocalVideoTrack, Track, LocalTrackPublication, LocalVideoTrackStats, LocalAudioTrackStats } from 'twilio-video';
 
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
-
+import { renderLocalTrackStats } from './renderLocalTrackStats';
+const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
 // Create your style.
 const style = {
   background_gray: {
@@ -40,27 +41,23 @@ sheet.attach();
 
 
 const publishControls = new Map<Track.SID, Map<Room, IPublishControl>>();
-export function updateTrackStats({ room, trackId, trackSid, bytesSent, timestamp } : {
-  room: Room,
-  trackId: Track.SID,
-  trackSid: Track.SID,
-  timestamp: number,
-  bytesSent: number | null
-}) {
-  const trackPublishControls = publishControls.get(trackId);
-  if (trackPublishControls) {
-    const publishControl = trackPublishControls.get(room);
-    if (publishControl) {
-        bytesSent = bytesSent || 0;
-        publishControl.updateTrackStats({ trackSid, bytesSent, timestamp });
+export function updateLocalTrackStats(room: Room, trackStats: LocalVideoTrackStats[]|LocalAudioTrackStats[]) {
+  if (trackStats.length > 0) {
+    const trackPublishControls = publishControls.get(trackStats[0].trackId);
+    if (trackPublishControls) {
+      const publishControl = trackPublishControls.get(room);
+      if (publishControl) {
+        publishControl.updateLocalTrackStats(trackStats);
+      }
     }
   }
 }
 
+
 type IPublishControl = {
   unPublishBtn: IButton;
   stopRendering: () => void;
-  updateTrackStats: ({trackSid, bytesSent, timestamp} : { trackSid: Track.SID, bytesSent: number, timestamp: number}) => void
+  updateLocalTrackStats: (trackStats: LocalVideoTrackStats[]|LocalAudioTrackStats[]) => void
 }
 
 // creates buttons to publish unpublish track in a given room.
@@ -73,22 +70,14 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
   let priorityButtons: IButton[] = [];
   let unPublishBtn: IButton;
   let publishBtn: IButton;
-  let statBytes: ILabeledStat;
   let priority: ILabeledStat;
   let trackPublication: LocalTrackPublication | null = Array.from(room.localParticipant.tracks.values()).find(trackPub => trackPub.track === track) || null;
-  let previousBytes = 0;
-  let previousTime = 0;
   const updateControls = () => {
-
     // show priority buttons only when trackPublication is available.
     priorityButtons.forEach(priButton => priButton.show(!!trackPublication))
-
     publishBtn.show(!trackPublication);
     unPublishBtn.show(!!trackPublication);
-    statBytes.setText('0');
     priority.setText(`${trackPublication?.priority}`);
-    previousBytes = 0;
-    previousTime = 0;
   };
 
   publishBtn = createButton('publish', container, async () => {
@@ -100,6 +89,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     }
     publishBtn.enable();
   });
+
   unPublishBtn = createButton('unpublish', container, () => {
     if (trackPublication) {
       trackPublication.unpublish();
@@ -108,11 +98,6 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     }
   });
 
-  statBytes = createLabeledStat({
-    container,
-    label: 'sent (kbps)',
-    valueMapper: (text: string) => text === '0' ? sheet.classes.background_gray : sheet.classes.background_green
-  });
 
   priority = createLabeledStat({
     container,
@@ -134,23 +119,16 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     publishBtn.click();
   }
 
+  const localTrackStatRender = renderLocalTrackStats(container);
   return {
     unPublishBtn,
-    updateTrackStats: ({ trackSid, bytesSent, timestamp } : {
-      trackSid: Track.SID,
-      bytesSent: number,
-      timestamp: number
-    }) => {
-      if (trackPublication && trackPublication.trackSid === trackSid) {
-        const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
-        const bps =  round((bytesSent - previousBytes) / (timestamp - previousTime));
-        previousBytes = bytesSent;
-        previousTime = timestamp;
-
-        statBytes.setText(bps.toString());
+    updateLocalTrackStats: (trackStats: LocalVideoTrackStats[]|LocalAudioTrackStats[]) => {
+      if (trackPublication && trackPublication.trackSid === trackStats[0].trackSid) {
+        localTrackStatRender.updateLocalTrackStats(trackStats);
       }
     },
     stopRendering: () => {
+      localTrackStatRender.stopRendering();
       container.remove();
     }
   };

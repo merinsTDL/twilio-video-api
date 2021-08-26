@@ -76,10 +76,22 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
 
   let dimensions: ILabeledStat;
   let fps: ILabeledStat;
+
+  // function workaroundBackgroundNoiseWhenMuted(remoteAudioTrack: RemoteAudioTrack) {
+  //   remoteAudioTrack.on('disabled', () => {
+  //     remoteAudioTrack.mediaStreamTrack.enabled = false;
+  //   });
+  //   remoteAudioTrack.on('enabled', () => {
+  //     remoteAudioTrack.mediaStreamTrack.enabled = true;
+  //   });
+  // }
+
   if (isVideoTrack(track)) {
     dimensions = createLabeledStat({ container, label: 'dimensions' });
     track.on('dimensionsChanged', () => updateStats());
     fps = createLabeledStat({ container, label: 'FPS' });
+  } else {
+    // workaroundBackgroundNoiseWhenMuted(track as RemoteAudioTrack);
   }
 
   const started = createLabeledStat({
@@ -107,6 +119,8 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     updateStats();
     listenOnMSTrack(track.mediaStreamTrack);
   });
+
+
 
   function updateStats() {
     readyState.setText(track.mediaStreamTrack.readyState);

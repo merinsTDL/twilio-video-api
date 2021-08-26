@@ -42,6 +42,7 @@ sheet.attach();
 export type IRenderedRemoteTrackPublication = {
   setBytesReceived: (bytesReceived: number, timestamp: number) => void;
   setFPS: (fps: number) => void;
+  setAudioLevel: (audioLevel: number) => void;
   trackPublication: RemoteTrackPublication;
   container: HTMLElement;
   stopRendering: () => void;
@@ -103,6 +104,11 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
     setFPS: (fps: number) => {
       if (renderedTrack) {
         renderedTrack.setFPS(fps);
+      }
+    },
+    setAudioLevel: (audioLevel: number) => {
+      if (renderedTrack) {
+        renderedTrack.setAudioLevel(audioLevel);
       }
     },
     trackPublication,

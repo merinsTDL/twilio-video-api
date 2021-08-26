@@ -34,11 +34,13 @@ sheet.attach();
 export type IRenderedRemoteMediaTrack = {
   setBytesReceived: (bytesReceived: number, timestamp: number) => void;
   setFPS: (fps: number) => void;
+  setAudioLevel: (audioLevel: number) => void;
   stopRendering: () => void;
 }
 
 export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrack, trackPublication: RemoteTrackPublication, container: HTMLElement, autoAttach: boolean): IRenderedRemoteMediaTrack {
   let trackFPS: ILabeledStat;
+  let trackAudioLevel: ILabeledStat;
   const videoTrack = track.kind === 'video' ? track as RemoteVideoTrack : null;
   const renderedTrack = renderTrack({ track, container, autoAttach });
   const trackBytesDiv = createDiv(container, sheet.classes.remoteTrackControls, 'remoteTrackControls');
@@ -52,6 +54,12 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
     trackFPS = createLabeledStat({
       container: trackBytesDiv,
       label: 'fps',
+      valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
+    });
+  } else {
+    trackAudioLevel = createLabeledStat({
+      container: trackBytesDiv,
+      label: 'audioLevel',
       valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
     });
   }
@@ -130,6 +138,9 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
     },
     setFPS: (fps: number) => {
       trackFPS.setText(fps.toString());
+    },
+    setAudioLevel: (audioLevel: number) => {
+      trackAudioLevel.setText(audioLevel.toString());
     },
     stopRendering: () => {
       renderedTrack.stopRendering();

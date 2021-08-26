@@ -27,6 +27,10 @@ export function createLabeledStat({ container, label, id, valueMapper } : {
   const el = createElement({container, type: 'p', id, classNames });
   let lastClass: string|undefined;
   return {
+    element: el,
+    setLabel: (newLabel: string) => {
+      label = newLabel;
+    },
     setText: (text: string) => {
       if (lastClass) {
         el.classList.remove(lastClass);
