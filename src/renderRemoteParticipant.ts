@@ -17,6 +17,7 @@ import jss from './jss'
 import { createLabeledStat } from './components/labeledstat';
 import { REST_CREDENTIALS } from './getCreds';
 import { createButton } from './components/button';
+import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 // Create your style.
 const style = {
   background_gray: {
@@ -108,9 +109,12 @@ function remoteParticipantRestAPI(participant: RemoteParticipant, container: HTM
 
 
 export function renderRemoteParticipant(participant: RemoteParticipant, container: HTMLElement, room: Room, restCreds: REST_CREDENTIALS | null, shouldAutoAttach: () => boolean): IRenderedRemoteParticipant {
-  container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
-  createLabeledStat({ container, label: 'class' }).setText('RemoteParticipant');
-  createLabeledStat({ container, label: 'identity' }).setText(participant.identity);
+
+  let outerDiv: HTMLFieldSetElement;
+  ({ innerDiv: container, outerDiv } = createCollapsibleDiv({ container, headerText: participant.identity, divClass: sheet.classes.participantDiv}))
+  // container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
+  // createLabeledStat({ container, label: 'class' }).setText('RemoteParticipant');
+  // createLabeledStat({ container, label: 'identity' }).setText(participant.identity);
   createLabeledStat({ container, label: 'sid' }).setText(participant.sid);
 
   if (restCreds !== null) {
@@ -156,7 +160,8 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
         renderedTrackpublication.stopRendering();
         renderedPublications.delete(renderedTrackSid);
       });
-      container.remove();
+      // container.remove();
+      outerDiv.remove();
     }
   };
 }

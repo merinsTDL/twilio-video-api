@@ -6,7 +6,7 @@
 
 import { Room, Logger, LocalTrack, TwilioError} from 'twilio-video';
 import { createLog, log } from './components/log';
-import { createCollapsibleDiv } from './components/createCollapsibleDiv';
+import { createCollapsibleDiv, createFieldSet } from './components/createCollapsibleDiv';
 import { createDiv } from './components/createDiv';
 import { createLocalTracksControls } from './createLocalTracksControls';
 import { createRoomControls } from './createRoomControls';
@@ -59,8 +59,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   // link to source code
   createLink({ container: containerDiv, linkText: 'Twilio-Video-API-Demo', linkUrl: 'https://github.com/makarandp0/twilio-video-api', newTab: true });
 
-  // create html
-  const container = createDiv(containerDiv, sheet.classes.mainDiv, 'main');
+  const { fieldset: container } = createFieldSet({ container: containerDiv, headerText: '', divClasses: [sheet.classes.mainDiv] });
   createLog(containerDiv);
   log("Version: ", Video.version);
   log("IsSupported: ", Video.isSupported);

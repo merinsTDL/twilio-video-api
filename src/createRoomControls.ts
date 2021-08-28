@@ -242,6 +242,7 @@ export function createRoomControls(
   const defaultOptions = {
     networkQuality: { local: 1, remote: 0 },
     dominantSpeaker: true,
+    preferredAudioCodecs: [{ codec: 'opus', dtx: false }],
     preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }],
     bandwidthProfile: {
       video: {

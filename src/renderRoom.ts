@@ -142,7 +142,7 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   restCreds: REST_CREDENTIALS|null,
   logger: Log.Logger
 }) {
-  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Room Details`, divClass: sheet.classes.roomContainer });
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Details`, divClass: sheet.classes.roomContainer });
   container = innerDiv;
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);
@@ -164,7 +164,6 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   }
 
   createLabeledStat({ container, label: 'room.sid' }).setText(room.sid);
-  createLabeledStat({ container, label: 'localParticipant' }).setText(room.localParticipant.identity);
   createLabeledStat({ container, label: 'localParticipant.sid' }).setText(room.localParticipant.sid);
 
   const roomState = createLabeledStat({
@@ -257,9 +256,9 @@ export async function renderRoom({ room, container, shouldAutoAttach, restCreds,
   logger: Log.Logger
 }) {
 
-  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: 'Room', divClass: sheet.classes.roomContainer });
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: room.localParticipant.identity, divClass: sheet.classes.roomContainer });
   container = innerDiv;
-  createLabeledStat({ container, label: 'class' }).setText('Room');
+  // createLabeledStat({ container, label: 'class' }).setText('Room');
 
   renderRoomDetails({ room, container, restCreds, logger});
   const btnDisconnect = createButton('disconnect', container, () => {
