@@ -22,9 +22,9 @@ const style = {
   remoteTrackControls: {
     /* since it attaches to track container */
     /* does not need top border */
-    'border-bottom': 'solid 1px black',
-    'border-left': 'solid 1px black',
-    'border-right': 'solid 1px black',
+    // 'border-bottom': 'solid 1px black',
+    // 'border-left': 'solid 1px black',
+    // 'border-right': 'solid 1px black',
   }
 }
 // Compile styles, apply plugins.

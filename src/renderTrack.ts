@@ -13,7 +13,7 @@ const style = {
     background: 'yellow'
   },
   trackContainer: {
-    border: 'solid 1px black',
+    // border: 'solid 1px black',
     padding: '5px',
   },
   videoElement: {

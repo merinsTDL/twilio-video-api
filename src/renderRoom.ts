@@ -47,7 +47,7 @@ const style = {
     display: 'flex',
     margin: '5px',
     'flex-direction': 'column',
-    border: 'solid black 1px',
+    // border: 'solid black 1px',
   },
   remoteTrackControls: {
     /* since it attaches to track container */
@@ -142,7 +142,7 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   restCreds: REST_CREDENTIALS|null,
   logger: Log.Logger
 }) {
-  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Details`, divClass: sheet.classes.roomContainer });
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Details`, divClass: sheet.classes.roomContainer, startHidden: true });
   container = innerDiv;
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);

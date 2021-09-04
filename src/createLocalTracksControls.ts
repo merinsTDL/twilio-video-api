@@ -101,7 +101,7 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
 
   const btnSyntheticVideo = createButton('+ Synthetic Video', localTrackButtonsContainer, async () => {
     const thisTrackName = 'V-' + number++;
-    const msTrack = await syntheticVideo({ width: 300, height: 150, word: thisTrackName });
+    const msTrack = await syntheticVideo({ width: 640, height: 360, word: thisTrackName });
     const localTrack = new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });

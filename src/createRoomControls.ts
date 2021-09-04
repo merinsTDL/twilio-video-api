@@ -58,7 +58,7 @@ const style = {
     width: '300px',
     display: 'flex',
     padding: '5px',
-    border: 'solid black 1px',
+    // border: 'solid black 1px',
     'flex-direction': 'column',
     'flex-wrap': 'wrap',
     'background-color': '#fff',

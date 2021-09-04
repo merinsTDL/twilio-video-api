@@ -1,5 +1,6 @@
 import { sheets } from 'jss';
 import { AudioTrack, LocalAudioTrack, LocalVideoTrack, RemoteAudioTrack, RemoteVideoTrack, VideoTrack } from 'twilio-video';
+import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { createDiv } from './components/createDiv';
 import { ILabeledStat, createLabeledStat } from './components/labeledstat';
 import jss from './jss'
@@ -45,7 +46,9 @@ function getClass(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | 
 }
 
 export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack, container: HTMLElement) {
-  container = createDiv(container, 'trackStats');
+  let outerDiv: HTMLFieldSetElement;
+  ({ innerDiv: container, outerDiv } = createCollapsibleDiv({ container, headerText: 'Track Details', startHidden: true, divClass: [] }));
+  // container = createDiv(container, 'trackStats');
 
   function isVideoTrack(track: AudioTrack | VideoTrack): track is VideoTrack {
     return track.kind === 'video';
@@ -76,15 +79,6 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
 
   let dimensions: ILabeledStat;
   let fps: ILabeledStat;
-
-  // function workaroundBackgroundNoiseWhenMuted(remoteAudioTrack: RemoteAudioTrack) {
-  //   remoteAudioTrack.on('disabled', () => {
-  //     remoteAudioTrack.mediaStreamTrack.enabled = false;
-  //   });
-  //   remoteAudioTrack.on('enabled', () => {
-  //     remoteAudioTrack.mediaStreamTrack.enabled = true;
-  //   });
-  // }
 
   if (isVideoTrack(track)) {
     dimensions = createLabeledStat({ container, label: 'dimensions' });

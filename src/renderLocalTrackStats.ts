@@ -20,7 +20,7 @@ const style = {
   },
   localTrackContainer: {
     resize: 'both',
-    border: 'solid 1px black',
+    // border: 'solid 1px black',
     overflow: 'auto',
     'overflow-y': 'scroll',
     // padding: '5px',

@@ -12,19 +12,26 @@ const style = {
     display: 'contents'
   },
   legendStyle: {
+    overflow: 'hidden',
     'text-align': 'left',
     'background-color': 'black',
     color: 'white',
     padding: "3px 6px"
   },
+  nonCollapsedStyle: {
+    // border: 'none',
+    padding: 0,
+  },
   collapsedStyle: {
+    border: 'none',
+    padding: 0,
   }
 }
 // Compile styles, apply plugins.
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
-export function createCollapsibleDiv_old({ container, headerText, divClass } : {
+export function createCollapsibleDiv_1({ container, headerText, divClass } : {
   container: HTMLElement,
   headerText: string,
   divClass: string[] | string
@@ -49,31 +56,84 @@ export function createCollapsibleDiv_old({ container, headerText, divClass } : {
   };
 }
 
-export function createCollapsibleDiv({ container, headerText, divClass } : {
+export function createCollapsibleDiv_2({ container, headerText, divClass, startHidden = false } : {
   container: HTMLElement,
   headerText: string,
-  divClass: string[] | string
+  divClass: string[] | string,
+  startHidden?: boolean
 }) : { innerDiv: HTMLDivElement, outerDiv: HTMLFieldSetElement } {
 
-  const divClasses = Array.isArray(divClass) ? divClass : [divClass];
+  // NOTE: on safari - if the fieldset is styled with display:flex, the legend onClick does not work.
+  // we need to remove the display flex from the
+  const divClasses = Array.isArray(divClass) ? [...divClass, sheet.classes.nonCollapsedStyle] : [divClass, sheet.classes.nonCollapsedStyle];
   const { fieldset: collapsibleDiv, legend } = createFieldSet({ container, headerText, divClasses, legendClasses: [sheet.classes.legendStyle]});
-  let display = 'none';
+
+
+  let innerDivDisplayStyle = 'none';
   legend.addEventListener('click', () => {
+    console.log('makarand: click');
     if (innerDiv.style.display === 'none') {
       // show
-      innerDiv.style.display = display;
+      innerDiv.style.display = innerDivDisplayStyle;
       collapsibleDiv.classList.remove(sheet.classes.collapsedStyle);
       collapsibleDiv.classList.add(...divClasses);
 
     } else {
       // hide
-      display = innerDiv.style.display;
+      innerDivDisplayStyle = innerDiv.style.display;
       innerDiv.style.display = 'none';
       collapsibleDiv.classList.remove(...divClasses);
       collapsibleDiv.classList.add(sheet.classes.collapsedStyle);
     }
   })
   const innerDiv = createDiv(collapsibleDiv, [sheet.classes.displayContents]);
+  innerDivDisplayStyle = innerDiv.style.display;
+  if (startHidden) {
+    legend.click();
+  }
+  return {
+    innerDiv,
+    outerDiv: collapsibleDiv
+  };
+}
+
+
+export function createCollapsibleDiv({ container, headerText, divClass, startHidden = false } : {
+  container: HTMLElement,
+  headerText: string,
+  divClass: string[] | string,
+  startHidden?: boolean
+}) : { innerDiv: HTMLDivElement, outerDiv: HTMLFieldSetElement } {
+
+  // NOTE: on safari - if the fieldset is styled with display:flex, the legend onClick does not work.
+  // we need to remove the display flex from the
+  const divClasses = Array.isArray(divClass) ? [...divClass] : [divClass, sheet.classes.nonCollapsedStyle];
+  const { fieldset: collapsibleDiv, legend } = createFieldSet({ container, headerText: `- ${headerText}`, divClasses:[sheet.classes.nonCollapsedStyle], legendClasses: [sheet.classes.legendStyle]});
+
+
+  let innerDivDisplayStyle = 'none';
+  legend.addEventListener('click', () => {
+    console.log('makarand: click');
+    if (innerDiv.style.display === 'none') {
+      // show
+      innerDiv.style.display = innerDivDisplayStyle;
+      collapsibleDiv.classList.remove(sheet.classes.collapsedStyle);
+      collapsibleDiv.classList.add(sheet.classes.nonCollapsedStyle);
+      legend.innerHTML = `- ${headerText}`;
+    } else {
+      // hide
+      innerDivDisplayStyle = innerDiv.style.display;
+      innerDiv.style.display = 'none';
+      collapsibleDiv.classList.remove(sheet.classes.nonCollapsedStyle);
+      collapsibleDiv.classList.add(sheet.classes.collapsedStyle);
+      legend.innerHTML = `+ ${headerText}`;
+    }
+  })
+  const innerDiv = createDiv(collapsibleDiv, divClasses);
+  innerDivDisplayStyle = innerDiv.style.display;
+  if (startHidden) {
+    legend.click();
+  }
   return {
     innerDiv,
     outerDiv: collapsibleDiv

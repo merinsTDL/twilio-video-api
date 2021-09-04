@@ -46,7 +46,7 @@ const style = {
     display: 'flex',
     margin: '5px',
     'flex-direction': 'column',
-    border: 'solid black 1px',
+    // border: 'solid black 1px',
   },
   remoteTrackControls: {
     /* since it attaches to track container */
@@ -57,7 +57,7 @@ const style = {
   },
   participantDiv: {
     margin: '2px',
-    border: 'solid 1px black'
+    // border: 'solid 1px black'
   },
   participantMediaDiv: {
     padding: '5px',
