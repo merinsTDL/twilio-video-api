@@ -63,9 +63,7 @@ type IPublishControl = {
 // creates buttons to publish unpublish track in a given room.
 function createRoomPublishControls(container: HTMLElement, room: Room, track: LocalAudioTrack | LocalVideoTrack, shouldAutoPublish: boolean): IPublishControl {
   container = createDiv(container, sheet.classes.localTrackControls, 'localTrackControls');
-  const roomSid = createElement({ container, type: 'h8', classNames: ['roomHeader'] });
-
-  roomSid.innerHTML = room.localParticipant.identity;
+  const roomSid = createElement({ container, type: 'h8', classNames: ['roomHeader'], innerHtml: room.localParticipant.identity });
 
   let priorityButtons: IButton[] = [];
   let unPublishBtn: IButton;
@@ -80,6 +78,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     priority.setText(`${trackPublication?.priority}`);
   };
 
+  let localTrackStatRender = renderLocalTrackStats(container);
   publishBtn = createButton('publish', container, async () => {
     publishBtn.disable();
     if (!trackPublication) {
@@ -94,6 +93,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     if (trackPublication) {
       trackPublication.unpublish();
       trackPublication = null;
+      localTrackStatRender.stopRendering();
       updateControls();
     }
   });
@@ -119,7 +119,7 @@ function createRoomPublishControls(container: HTMLElement, room: Room, track: Lo
     publishBtn.click();
   }
 
-  const localTrackStatRender = renderLocalTrackStats(container);
+
   return {
     unPublishBtn,
     updateLocalTrackStats: (trackStats: LocalVideoTrackStats[]|LocalAudioTrackStats[]) => {

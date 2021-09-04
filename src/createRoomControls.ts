@@ -63,6 +63,14 @@ const style = {
     'flex-wrap': 'wrap',
     'background-color': '#fff',
   },
+  moreRoomControls: {
+    display: 'flex',
+    padding: '5px',
+    // border: 'solid black 1px',
+    'flex-direction': 'column',
+    'flex-wrap': 'wrap',
+    'background-color': '#fff',
+  },
   roomControlsInput: {
     padding: '0.5em',
     'text-align': 'center',
@@ -73,6 +81,9 @@ const style = {
   },
   roomControlsButton: {
     'text-align': 'center'
+  },
+  joinRoomButton: {
+    height: '3em',
   },
   controlOptions: {
     display: 'flex',
@@ -138,48 +149,7 @@ export function createRoomControls(
   const urlParams = new URLSearchParams(window.location.search);
 
   const { innerDiv, outerDiv } = createCollapsibleDiv({ container, headerText: 'Controls', divClass: sheet.classes.roomControls });
-
-  const twilioVideoVersion = createElement({ container: innerDiv, type: 'h3', id: 'twilioVideoVersion' });
-  twilioVideoVersion.innerHTML = 'Twilio-Video@' + Video.version;
-
-  const topologySelect = createSelection({
-    id: 'topology',
-    container: innerDiv,
-    options: ['group-small', 'peer-to-peer', 'group', 'go'],
-    title: 'topology',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    onChange: () => log('topology change:', topologySelect.getValue())
-  });
-
-  let extraConnectOptions: { value: string; };
-  const envSelect = createSelection({
-    id: 'env',
-    container: innerDiv,
-    options: ['dev', 'stage', 'prod'],
-    title: 'env',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    onChange: () => {
-      const newEnv = envSelect.getValue();
-      if (newEnv === 'dev') {
-        // eslint-disable-next-line no-use-before-define
-        const devOptions = Object.assign({}, defaultOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
-        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions);
-      }
-      log('env change:', newEnv);
-    }
-  });
-
-  //
-  // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
-  const labelText = createLink({ container: innerDiv, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
-  labelText.classList.add(sheet.classes.roomControlsLabel);
-  const tokenServerUrlInput = createLabeledInput({
-    container: innerDiv,
-    labelText,
-    placeHolder: 'Enter server url',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput]
-  });
+  createElement({ container: innerDiv, type: 'h3', id: 'twilioVideoVersion', innerHtml: 'Twilio-Video@' + Video.version });
 
   const localIdentity = createLabeledInput({
     container: innerDiv,
@@ -197,8 +167,51 @@ export function createRoomControls(
     inputClasses: [sheet.classes.roomControlsInput]
   });
 
+  const { innerDiv: moreOptionsDiv } = createCollapsibleDiv({ container: innerDiv, headerText: 'More...', divClass: sheet.classes.moreRoomControls, startHidden: true });
+
+
+
+  const topologySelect = createSelection({
+    id: 'topology',
+    container: moreOptionsDiv,
+    options: ['group-small', 'peer-to-peer', 'group', 'go'],
+    title: 'topology',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    onChange: () => log('topology change:', topologySelect.getValue())
+  });
+
+  let extraConnectOptions: { value: string; };
+  const envSelect = createSelection({
+    id: 'env',
+    container: moreOptionsDiv,
+    options: ['dev', 'stage', 'prod'],
+    title: 'env',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    onChange: () => {
+      const newEnv = envSelect.getValue();
+      if (newEnv === 'dev') {
+        // eslint-disable-next-line no-use-before-define
+        const devOptions = Object.assign({}, defaultOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
+        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions);
+      }
+      log('env change:', newEnv);
+    }
+  });
+
+  //
+  // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
+  const labelText = createLink({ container: moreOptionsDiv, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
+  labelText.classList.add(sheet.classes.roomControlsLabel);
+  const tokenServerUrlInput = createLabeledInput({
+    container: moreOptionsDiv,
+    labelText,
+    placeHolder: 'Enter server url',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
+  });
+
   extraConnectOptions = createLabeledInput({
-    container: innerDiv,
+    container: moreOptionsDiv,
     labelText: 'ConnectOptions: ',
     placeHolder: 'connectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -206,7 +219,7 @@ export function createRoomControls(
   });
 
   const maxParticipantsInput = createLabeledInput({
-    container: innerDiv,
+    container: moreOptionsDiv,
     labelText: 'MaxParticipants: ',
     placeHolder: 'optional (51+ makes large room)]',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -214,7 +227,7 @@ export function createRoomControls(
   });
 
 
-  const controlOptionsDiv = createDiv(innerDiv, sheet.classes.controlOptions, 'control-options');
+  const controlOptionsDiv = createDiv(moreOptionsDiv, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
   const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });
@@ -354,6 +367,7 @@ export function createRoomControls(
       log('Failed: ', ex);
     }
   });
+  btnJoin.btn.classList.add(sheet.classes.joinRoomButton);
 
   if (autoJoin.checked) {
     btnJoin.click();

@@ -2,7 +2,7 @@ import { LocalAudioTrackStats, LocalVideoTrackStats } from 'twilio-video';
 import { createLabeledStat } from './components/labeledstat';
 import jss from './jss'
 
-const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
+
 // Create your style.
 const style = {
   background_gray: {
@@ -62,7 +62,6 @@ function renderSSRC(container: HTMLElement): ISSRCRender {
     update:(trackStats: LocalAudioTrackStats|LocalVideoTrackStats) => {
       ssrc = trackStats.ssrc;
       if (isVideoTrackStats(trackStats)) {
-        let newLabel = "";
         if (trackStats.dimensions !== null) {
           const { width, height } = trackStats.dimensions;
           const frameRate = trackStats.frameRate || 0;
@@ -71,8 +70,9 @@ function renderSSRC(container: HTMLElement): ISSRCRender {
       }
       let newBytesSent = trackStats.bytesSent||0;
       let newTimestamp = trackStats.timestamp;
-      const bps =  round((newBytesSent - previousBytes) / (newTimestamp - previousTime));
-      statDisplay.setText(bps.toString());
+      const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
+      const kBitsPerSecond = round((newBytesSent - previousBytes) / (newTimestamp - previousTime)) * 10;
+      statDisplay.setText(kBitsPerSecond.toString());
       previousTime = newTimestamp;
       previousBytes = newBytesSent;
     }
@@ -96,6 +96,8 @@ export function renderLocalTrackStats(container: HTMLElement) {
       });
     },
     stopRendering:() => {
+      ssrcDisplayMap.forEach(ssrcRenderer => ssrcRenderer.stopRendering());
+      ssrcDisplayMap.clear();
     }
   }
 }

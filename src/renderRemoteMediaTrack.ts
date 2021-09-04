@@ -130,10 +130,10 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
     setBytesReceived: (bytesReceived: number, timeStamp: number) => {
       if (statBytes) {
         const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
-        const bps = round((bytesReceived - previousBytes) / (timeStamp - previousTime));
+        const kBitsPerSecond = round((bytesReceived - previousBytes) / (timeStamp - previousTime)) * 10;
         previousBytes = bytesReceived;
         previousTime = timeStamp;
-        statBytes.setText(bps.toString());
+        statBytes.setText(kBitsPerSecond.toString());
       }
     },
     setFPS: (fps: number) => {

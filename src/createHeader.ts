@@ -29,7 +29,5 @@ export function createHeader({ container, text, type = 'h3', classNames }: {
   if (!classNames) {
     classNames = [sheet.classes.header];
   }
-  const el = createElement({ container, type, classNames });
-  el.innerHTML = text;
-  return el;
+  return createElement({ container, type, classNames, innerHtml: text });
 }

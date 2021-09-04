@@ -11,8 +11,7 @@ export function createLabeledInput({ container, labelText, placeHolder, initialV
 }) : HTMLInputElement {
   let identityLabel = null;
   if (typeof labelText === 'string')  {
-    identityLabel = createElement({ container, type: 'label', classNames: labelClasses });
-    identityLabel.innerHTML = labelText;
+    identityLabel = createElement({ container, type: 'label', classNames: labelClasses, innerHtml: labelText });
   } else {
     identityLabel = labelText;
   }

@@ -142,7 +142,7 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   restCreds: REST_CREDENTIALS|null,
   logger: Log.Logger
 }) {
-  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Details`, divClass: sheet.classes.roomContainer, startHidden: true });
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Room Details`, divClass: sheet.classes.roomContainer, startHidden: true });
   container = innerDiv;
   const options  = Object.keys(logger.levels);
   const currentLevel = getCurrentLoggerLevelAsString(logger);

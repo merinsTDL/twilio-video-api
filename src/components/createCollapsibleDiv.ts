@@ -113,7 +113,6 @@ export function createCollapsibleDiv({ container, headerText, divClass, startHid
 
   let innerDivDisplayStyle = 'none';
   legend.addEventListener('click', () => {
-    console.log('makarand: click');
     if (innerDiv.style.display === 'none') {
       // show
       innerDiv.style.display = innerDivDisplayStyle;

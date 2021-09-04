@@ -8,8 +8,7 @@ export function createLabeledCheckbox({ container, labelText, id } : {
   const checkbox = createElement({ container, type: 'input', id }) as HTMLInputElement;
   checkbox.setAttribute('type', 'checkbox');
 
-  const label = createElement({ container, type: 'label' });
-  label.innerHTML = labelText;
+  const label = createElement({ container, type: 'label', innerHtml: labelText});
   label.setAttribute('for', id);
   return checkbox;
 }
