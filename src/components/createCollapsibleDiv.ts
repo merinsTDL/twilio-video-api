@@ -14,7 +14,7 @@ const style = {
   legendStyle: {
     overflow: 'hidden',
     'text-align': 'left',
-    'background-color': 'black',
+    'background-color': 'darkslategray',
     color: 'white',
     padding: "3px 6px"
   },

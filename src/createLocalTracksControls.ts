@@ -34,7 +34,7 @@ const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
 export function createLocalTracksControls({ buttonContainer, container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
-  buttonContainer: HTMLDivElement, // parent for control buttons
+  buttonContainer: HTMLElement, // parent for control buttons
   container: HTMLElement, // parent for tracks.
   rooms: Room[],
   Video: typeof import('twilio-video'),
@@ -94,6 +94,10 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
   // eslint-disable-next-line no-unused-vars
   const btnPreviewVideo = createButton('+ Local Video', localTrackButtonsContainer, async () => {
     const thisTrackName = 'camera-' + number++;
+    // const msTrack: MediaStreamTrack = (await navigator.mediaDevices.getUserMedia({ video: true, audio: false })).getTracks()[0];
+    // console.log('makarand: settings:', msTrack.getSettings());
+    // console.log('makarand: getCapabilities:', msTrack.getCapabilities());
+    // console.log('makarand: getConstraints:', msTrack.getConstraints());
     const localTrack = await Video.createLocalVideoTrack({ width: 1280, height: 720, logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });
@@ -112,6 +116,10 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     const screenStream = await navigator.mediaDevices.getDisplayMedia({
       video: { width: 1920, height: 1080, frameRate: 15 }
     });
+    const msTrack: MediaStreamTrack = screenStream.getTracks()[0];
+    console.log('makarand: settings:', msTrack.getSettings());
+    console.log('makarand: getCapabilities:', msTrack.getCapabilities());
+    console.log('makarand: getConstraints:', msTrack.getConstraints());
     const localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
     renderLocalTrack2(localTrack);
   });

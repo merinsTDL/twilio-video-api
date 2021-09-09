@@ -136,7 +136,7 @@ function handleSDKLogs(logger: Log.Logger) {
 export interface IRoomControl {
   shouldAutoAttach: () => boolean,
   shouldAutoPublish: () => boolean,
-  getRoomControlsDiv: () => HTMLDivElement
+  getRoomControlsDiv: () => HTMLElement,
   getRoomCredentials: () => Promise<{ token: string, environment: string }>
 };
 
@@ -148,32 +148,13 @@ export function createRoomControls(
 ): IRoomControl {
   const urlParams = new URLSearchParams(window.location.search);
 
-  const { innerDiv, outerDiv } = createCollapsibleDiv({ container, headerText: 'Controls', divClass: sheet.classes.roomControls });
-  createElement({ container: innerDiv, type: 'h3', id: 'twilioVideoVersion', innerHtml: 'Twilio-Video@' + Video.version });
 
-  const localIdentity = createLabeledInput({
-    container: innerDiv,
-    labelText: 'Identity: ',
-    placeHolder: 'Enter identity or random one will be generated',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput]
-  });
-
-  const roomNameInput = createLabeledInput({
-    container: innerDiv,
-    labelText: 'Room: ',
-    placeHolder: 'Enter room name or random name will be generated',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput]
-  });
-
-  const { innerDiv: moreOptionsDiv } = createCollapsibleDiv({ container: innerDiv, headerText: 'More...', divClass: sheet.classes.moreRoomControls, startHidden: true });
-
-
+  ({ innerDiv: container } = createCollapsibleDiv({ container, headerText: 'Controls', divClass: sheet.classes.roomControls }));
+  createElement({ container, type: 'h3', id: 'twilioVideoVersion', innerHtml: 'Twilio-Video@' + Video.version });
 
   const topologySelect = createSelection({
     id: 'topology',
-    container: moreOptionsDiv,
+    container,
     options: ['group-small', 'peer-to-peer', 'group', 'go'],
     title: 'topology',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -183,7 +164,7 @@ export function createRoomControls(
   let extraConnectOptions: { value: string; };
   const envSelect = createSelection({
     id: 'env',
-    container: moreOptionsDiv,
+    container,
     options: ['dev', 'stage', 'prod'],
     title: 'env',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -198,12 +179,34 @@ export function createRoomControls(
     }
   });
 
+
+
+  const localIdentity = createLabeledInput({
+    container,
+    labelText: 'Identity: ',
+    placeHolder: 'Enter identity or random one will be generated',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
+  });
+
+  const roomNameInput = createLabeledInput({
+    container,
+    labelText: 'Room: ',
+    placeHolder: 'Enter room name or random name will be generated',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput]
+  });
+
+  // const { innerDiv: moreOptionsDiv } = createCollapsibleDiv({ container: innerDiv, headerText: 'More...', divClass: sheet.classes.moreRoomControls, startHidden: true });
+
+
+
   //
   // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
-  const labelText = createLink({ container: moreOptionsDiv, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
+  const labelText = createLink({ container, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
   labelText.classList.add(sheet.classes.roomControlsLabel);
   const tokenServerUrlInput = createLabeledInput({
-    container: moreOptionsDiv,
+    container,
     labelText,
     placeHolder: 'Enter server url',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -211,7 +214,7 @@ export function createRoomControls(
   });
 
   extraConnectOptions = createLabeledInput({
-    container: moreOptionsDiv,
+    container,
     labelText: 'ConnectOptions: ',
     placeHolder: 'connectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -219,7 +222,7 @@ export function createRoomControls(
   });
 
   const maxParticipantsInput = createLabeledInput({
-    container: moreOptionsDiv,
+    container,
     labelText: 'MaxParticipants: ',
     placeHolder: 'optional (51+ makes large room)]',
     labelClasses: [sheet.classes.roomControlsLabel],
@@ -227,7 +230,7 @@ export function createRoomControls(
   });
 
 
-  const controlOptionsDiv = createDiv(moreOptionsDiv, sheet.classes.controlOptions, 'control-options');
+  const controlOptionsDiv = createDiv(container, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
   const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });
@@ -255,6 +258,7 @@ export function createRoomControls(
   const defaultOptions = {
     networkQuality: { local: 1, remote: 0 },
     dominantSpeaker: true,
+    adaptiveSimulcast: true,
     preferredAudioCodecs: [{ codec: 'opus', dtx: false }],
     preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }],
     bandwidthProfile: {
@@ -350,7 +354,7 @@ export function createRoomControls(
   }
 
   // eslint-disable-next-line consistent-return
-  const btnJoin = createButton('Join', innerDiv, async () => {
+  const btnJoin = createButton('Join', container, async () => {
     setupLocalDescriptionOverride();
     try {
       const token = (await getRoomCredentials()).token;
@@ -376,7 +380,7 @@ export function createRoomControls(
   return {
     shouldAutoAttach: () => autoAttach.checked,
     shouldAutoPublish: () => autoPublish.checked,
-    getRoomControlsDiv: () => innerDiv,
+    getRoomControlsDiv: () => container,
     getRoomCredentials,
   };
 }

@@ -4,7 +4,7 @@ import { PreflightTest, PreflightTestReport } from 'twilio-video';
 
 export function setupPreflight({ container, token, Video, environment, renderMSTrack } :
   {
-    container: HTMLDivElement,
+    container: HTMLElement,
     token: string,
     Video: typeof import('twilio-video'),
     environment: string

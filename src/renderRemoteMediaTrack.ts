@@ -117,6 +117,11 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
       videoTrack.setContentPreferences({ renderDimensions });
       renderHint.setText(`renderDimensions=160x120`);
     });
+    createButton('640x360', trackBytesDiv, () => {
+      const renderDimensions = { width: 640, height: 360 };
+      videoTrack.setContentPreferences({ renderDimensions });
+      renderHint.setText(`renderDimensions=640x360`);
+    });
     createButton('1280x720', trackBytesDiv, () => {
       const renderDimensions = { width: 1280, height: 720 };
       videoTrack.setContentPreferences({ renderDimensions });
