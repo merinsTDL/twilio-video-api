@@ -50,21 +50,28 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
   const localTracksContainer = createDiv(container, sheet.classes.trackRenders);
 
   const renderedTracks = new Map<LocalTrack, IRenderedLocalTrack>();
-  function renderLocalTrack2(track: LocalAudioTrack | LocalVideoTrack, videoDevices: MediaDeviceInfo[] = []) {
-    localTracks.push(track);
-    renderedTracks.set(track, renderLocalTrack({
+  function manageLocalTrack({ localTrack, trackName = 'Local Track', videoDevices = []} : {
+    trackName?: string,
+    localTrack: LocalAudioTrack | LocalVideoTrack,
+    videoDevices?: MediaDeviceInfo[]
+  }) {
+    console.log('Track settings: ', localTrack.mediaStreamTrack.getSettings && localTrack.mediaStreamTrack.getSettings());
+    console.log('Track capabilities: ', localTrack.mediaStreamTrack.getCapabilities && localTrack.mediaStreamTrack.getCapabilities());
+    localTracks.push(localTrack);
+    renderedTracks.set(localTrack, renderLocalTrack({
       container: localTracksContainer,
       rooms,
-      track,
+      track: localTrack,
       videoDevices,
+      trackName,
       autoAttach: shouldAutoAttach(),
       autoPublish: shouldAutoPublish(),
       onClosed: () => {
-        const index = localTracks.indexOf(track);
+        const index = localTracks.indexOf(localTrack);
         if (index > -1) {
           localTracks.splice(index, 1);
         }
-        renderedTracks.delete(track);
+        renderedTracks.delete(localTrack);
       }
     }));
   }
@@ -76,38 +83,33 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
   }
 
-  // eslint-disable-next-line no-unused-vars
   const btnPreviewAudio = createButton('+ Local Audio', localTrackButtonsContainer, async () => {
     const thisTrackName = 'mic-' + number++;
     const localTrack = await Video.createLocalAudioTrack({ logLevel: 'warn', name: thisTrackName });
-    renderLocalTrack2(localTrack);
+    manageLocalTrack({ localTrack, trackName: thisTrackName });
   });
 
   // eslint-disable-next-line no-unused-vars
   const btnSyntheticAudio = createButton('+ Synthetic Audio', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'Audio-' + number++;
+    const thisTrackName = 'SynAudio-' + number++;
     const msTrack = await syntheticAudio();
     const localTrack = new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
-    renderLocalTrack2(localTrack);
+    manageLocalTrack({ localTrack, trackName: thisTrackName});
   });
 
   // eslint-disable-next-line no-unused-vars
   const btnPreviewVideo = createButton('+ Local Video', localTrackButtonsContainer, async () => {
     const thisTrackName = 'camera-' + number++;
-    // const msTrack: MediaStreamTrack = (await navigator.mediaDevices.getUserMedia({ video: true, audio: false })).getTracks()[0];
-    // console.log('makarand: settings:', msTrack.getSettings());
-    // console.log('makarand: getCapabilities:', msTrack.getCapabilities());
-    // console.log('makarand: getConstraints:', msTrack.getConstraints());
     const localTrack = await Video.createLocalVideoTrack({ width: 1280, height: 720, logLevel: 'warn', name: thisTrackName });
-    renderLocalTrack2(localTrack);
+    manageLocalTrack({ localTrack, trackName: thisTrackName });
   });
 
 
   const btnSyntheticVideo = createButton('+ Synthetic Video', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'V-' + number++;
+    const thisTrackName = 'SynVideo-' + number++;
     const msTrack = await syntheticVideo({ width: 640, height: 360, word: thisTrackName });
     const localTrack = new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
-    renderLocalTrack2(localTrack);
+    manageLocalTrack({ localTrack, trackName: thisTrackName });
   });
 
   const btnScreenShare = createButton('+ Screen Share', localTrackButtonsContainer, async () => {
@@ -116,12 +118,8 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     const screenStream = await navigator.mediaDevices.getDisplayMedia({
       video: { width: 1920, height: 1080, frameRate: 15 }
     });
-    const msTrack: MediaStreamTrack = screenStream.getTracks()[0];
-    console.log('makarand: settings:', msTrack.getSettings());
-    console.log('makarand: getCapabilities:', msTrack.getCapabilities());
-    console.log('makarand: getConstraints:', msTrack.getConstraints());
     const localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
-    renderLocalTrack2(localTrack);
+    manageLocalTrack({ localTrack, trackName: thisTrackName });
   });
 
   // eslint-disable-next-line no-unused-vars
@@ -134,10 +132,10 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
           deviceId: { exact: device.deviceId },
           // height: 480, width: 640, frameRate: 24
         };
-        const thisTrackName = 'camera-' + number++;
+        const thisTrackName = 'camera-' + device.label + number++;
         const localTrack = await Video.createLocalVideoTrack({ logLevel: 'warn', name: thisTrackName, ...videoConstraints });
 
-        renderLocalTrack2(localTrack, videoDevices);
+        manageLocalTrack({ localTrack, videoDevices, trackName: thisTrackName });
       });
     });
   });

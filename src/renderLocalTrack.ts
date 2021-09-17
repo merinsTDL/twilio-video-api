@@ -139,7 +139,8 @@ export interface IRenderedLocalTrack {
   roomRemoved: (room: Room) => void;
 }
 
-export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, onClosed, videoDevices = [] }: {
+export function renderLocalTrack({ rooms, track, container, autoAttach, autoPublish, trackName = 'LocalTrack', onClosed, videoDevices = [] }: {
+  trackName?: string,
   rooms: Room[],
   track: LocalAudioTrack | LocalVideoTrack,
   container: HTMLElement,
@@ -148,7 +149,7 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
   onClosed: () => void,
   videoDevices: MediaDeviceInfo[]
 }): IRenderedLocalTrack {
-  const { innerDiv: localTrackContainer, outerDiv } = createCollapsibleDiv({ container, headerText: 'LocalTrack', divClass: sheet.classes.localTrackContainer });
+  const { innerDiv: localTrackContainer, outerDiv } = createCollapsibleDiv({ container, headerText: trackName, divClass: sheet.classes.localTrackContainer });
   const { stopRendering } = renderTrack({ track, container: localTrackContainer, autoAttach });
 
   const localTrackControls = createDiv(localTrackContainer, sheet.classes.localTrackControls);

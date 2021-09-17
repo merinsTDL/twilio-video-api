@@ -77,6 +77,27 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
   });
 
+  const trackSettingKeyToLabeledStat = new Map<string, ILabeledStat>();
+  function updateTrackSettings() {
+    const trackSettings = track.mediaStreamTrack.getSettings();
+    const keys = Object.keys(trackSettings);
+    keys.forEach(key => {
+      // exclude big settings
+      if (!['deviceId', 'groupId'].includes(key)) {
+        let settingStat = trackSettingKeyToLabeledStat.get(key);
+        if (!settingStat) {
+          settingStat = createLabeledStat({
+            container,
+            label: key,
+            valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
+          });
+          settingStat.setText(String(trackSettings[key as keyof MediaTrackSettings]));
+          trackSettingKeyToLabeledStat.set(key, settingStat);
+        }
+      }
+    });
+  }
+
   let dimensions: ILabeledStat;
   let fps: ILabeledStat;
 
@@ -114,8 +135,6 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     listenOnMSTrack(track.mediaStreamTrack);
   });
 
-
-
   function updateStats() {
     readyState.setText(track.mediaStreamTrack.readyState);
     enabled.setText(`${track.mediaStreamTrack.enabled}`);
@@ -123,6 +142,8 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     muted.setText(`${track.mediaStreamTrack.muted}`);
     trackEnabled.setText(`${track.isEnabled}`);
 
+    console.log('makarand: updating stats');
+    updateTrackSettings();
     if (isVideoTrack(track)) {
       const { width, height } = track.dimensions;
       dimensions.setText(`w${width} x h${height}`);

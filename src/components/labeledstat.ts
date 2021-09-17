@@ -14,7 +14,9 @@ const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
 export interface ILabeledStat {
+  element: HTMLElement,
   setText: (text: string) => void;
+  setLabel: (text: string) => void;
 };
 
 export function createLabeledStat({ container, label, id, valueMapper } : {
@@ -22,7 +24,7 @@ export function createLabeledStat({ container, label, id, valueMapper } : {
   label: string,
   id? : string,
   valueMapper?: (text: string) => string|undefined
-}) {
+}): ILabeledStat {
   const classNames = [sheet.classes.labeledStat];
   const el = createElement({container, type: 'p', id, classNames });
   let lastClass: string|undefined;

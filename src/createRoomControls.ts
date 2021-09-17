@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { randomName, randomParticipantName, randomRoomName } from  './randomName';
+import { randomParticipantName, randomRoomName } from  './randomName';
 import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createElement } from './components/createElement';
@@ -152,22 +152,25 @@ export function createRoomControls(
   ({ innerDiv: container } = createCollapsibleDiv({ container, headerText: 'Controls', divClass: sheet.classes.roomControls }));
   createElement({ container, type: 'h3', id: 'twilioVideoVersion', innerHtml: 'Twilio-Video@' + Video.version });
 
+  const selectionDiv = createDiv(container, sheet.classes.roomControlsLabel);
   const topologySelect = createSelection({
     id: 'topology',
-    container,
-    options: ['group-small', 'peer-to-peer', 'group', 'go'],
-    title: 'topology',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    onChange: () => log('topology change:', topologySelect.getValue())
+    container: selectionDiv,
+    options: ['group-small', 'peer-to-peer', 'group', 'go', 'large-room'],
+    title: 'topology: ',
+    labelClasses: [],
+    onChange: () => {
+      log('topology change:', topologySelect.getValue());
+    }
   });
 
   let extraConnectOptions: { value: string; };
   const envSelect = createSelection({
     id: 'env',
-    container,
+    container: selectionDiv,
     options: ['dev', 'stage', 'prod'],
-    title: 'env',
-    labelClasses: [sheet.classes.roomControlsLabel],
+    title: ' env: ',
+    labelClasses: [],
     onChange: () => {
       const newEnv = envSelect.getValue();
       if (newEnv === 'dev') {
@@ -178,8 +181,6 @@ export function createRoomControls(
       log('env change:', newEnv);
     }
   });
-
-
 
   const localIdentity = createLabeledInput({
     container,
@@ -196,10 +197,6 @@ export function createRoomControls(
     labelClasses: [sheet.classes.roomControlsLabel],
     inputClasses: [sheet.classes.roomControlsInput]
   });
-
-  // const { innerDiv: moreOptionsDiv } = createCollapsibleDiv({ container: innerDiv, headerText: 'More...', divClass: sheet.classes.moreRoomControls, startHidden: true });
-
-
 
   //
   // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
@@ -221,15 +218,6 @@ export function createRoomControls(
     inputType: 'textarea'
   });
 
-  const maxParticipantsInput = createLabeledInput({
-    container,
-    labelText: 'MaxParticipants: ',
-    placeHolder: 'optional (51+ makes large room)]',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput]
-  });
-
-
   const controlOptionsDiv = createDiv(container, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
@@ -244,7 +232,6 @@ export function createRoomControls(
   roomNameInput.value = urlParams.get('room') || randomRoomName();
   localIdentity.value = urlParams.get('identity') || randomParticipantName(); // randomName();
   tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
-  maxParticipantsInput.value = urlParams.get('maxParticipants') || '';
 
   // for working with dev env use:
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
@@ -282,13 +269,17 @@ export function createRoomControls(
   async function getRoomCredentials(): Promise<{token: string, environment: string}> {
     const identity = localIdentity.value || randomParticipantName(); // randomName();
     let tokenServerUrl = tokenServerUrlInput.value;
-    const topology = topologySelect.getValue();
     const environment = envSelect.getValue();
     const roomName = roomNameInput.value;
     const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
 
     let url = new URL(tokenServerUrl + '/token');
-    let maxParticipants = maxParticipantsInput.value;
+    let maxParticipants = urlParams.get('maxParticipants') || '';
+    let topology = topologySelect.getValue();
+    if (topology === 'large-room') {
+      maxParticipants = maxParticipants || "51"; // large-room is created when participants are 51+
+      topology = 'group';
+    }
 
     const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect, maxParticipants };
     console.log('Getting Token For: ', tokenOptions);
