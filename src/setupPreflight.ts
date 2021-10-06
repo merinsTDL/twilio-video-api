@@ -23,7 +23,14 @@ export function setupPreflight({ container, token, Video, environment, renderMST
       const logger = Video.Logger.getLogger('twilio-video');
       logger.setLevel('DEBUG');
       console.log('starting runPreflight');
-      preflightTest = runPreflight(token, { duration: 10000, environment });
+
+      const preflightOptions = { duration: 10000, environment };
+      if (environment === 'dev') {
+        // @ts-ignore
+        preflightOptions.wsServer = 'wss://us2.vss.dev.twilio.com/signaling';
+      }
+
+      preflightTest = runPreflight(token, preflightOptions);
       const deferred: { reject?: (e: Error) => void; resolve?: (report: any) => void; promise?: Promise<any>; } = {};
       deferred.promise = new Promise((resolve, reject) => {
         deferred.resolve = resolve;

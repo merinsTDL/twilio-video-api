@@ -14,6 +14,7 @@ import { Log, LocalTrack, Room, LocalDataTrack } from 'twilio-video';
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { getRestCreds, REST_CREDENTIALS } from './getCreds';
+import { logLevelSelector } from './logutils';
 
 /*
 You can override any of the SDP function by specifying a console override like a one below before connecting to the room:
@@ -89,7 +90,7 @@ const style = {
     display: 'flex',
     'flex-flow': 'row wrap',
     'margin-top': '10px',
-    'justify-content': 'center',
+    'justify-content': 'space-around',
     'align-items': 'center',
   }
 }
@@ -176,7 +177,7 @@ export function createRoomControls(
       if (newEnv === 'dev') {
         // eslint-disable-next-line no-use-before-define
         const devOptions = Object.assign({}, defaultOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
-        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions);
+        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions, null, 2);
       }
       log('env change:', newEnv);
     }
@@ -218,20 +219,32 @@ export function createRoomControls(
     inputType: 'textarea'
   });
 
+
   const controlOptionsDiv = createDiv(container, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
   const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });
   const autoAttach = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Attach', id: 'autoAttach' });
   const autoJoin = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Join', id: 'autoJoin' });
-  const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Record Participant', id: 'recordParticipant' });
   const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extra Info', id: 'extraInfo' });
   const sendLogs = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'send logs', id: 'sendLogs' });
+  const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Record Participant', id: 'recordParticipant' });
+  const defaultLogger = Video.Logger.getLogger('twilio-video');
+  const urlLogLevel=urlParams.get('logLevel') || "DEBUG";
+  if (urlLogLevel) {
+    try {
+      defaultLogger.setLevel(urlLogLevel.toUpperCase() as Log.LogLevelDesc);
+    } catch (ex) {
+      log('Error: Invalid logLevel: ', urlLogLevel);
+    }
+  }
+  const logLevelSelect = logLevelSelector({ container: controlOptionsDiv, logger: defaultLogger });
+
 
   // process parameters.
   roomNameInput.value = urlParams.get('room') || randomRoomName();
   localIdentity.value = urlParams.get('identity') || randomParticipantName(); // randomName();
-  tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3000';
+  tokenServerUrlInput.value = urlParams.get('server') || 'http://localhost:3002';
 
   // for working with dev env use:
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
@@ -245,9 +258,10 @@ export function createRoomControls(
   const defaultOptions = {
     networkQuality: { local: 1, remote: 0 },
     dominantSpeaker: true,
-    adaptiveSimulcast: true,
-    preferredAudioCodecs: [{ codec: 'opus', dtx: false }],
-    preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }],
+    // preferredVideoCodecs: [{ codec: "VP8", "simulcast": true }],
+    preferredVideoCodecs: 'auto',
+    preferredAudioCodecs: [{ codec: "opus", dtx: true }],
+    // preferredAudioCodecs: [],
     bandwidthProfile: {
       video: {
         clientTrackSwitchOffControl: 'manual',
@@ -314,8 +328,12 @@ export function createRoomControls(
       }
     }
 
-    const loggerName = `[${localIdentity.value}]:`;
+
+    // Local track logs are always connected on twilio-video logger
+    // so use the same logger when we want to send logs.
+    const loggerName = sendLogs.checked ? 'twilio-video' : `[${localIdentity.value}]:` ;
     const logger = Video.Logger.getLogger(loggerName);
+    logger.setLevel(defaultLogger.getLevel());
 
     const publishLogsAsData = sendLogs.checked;
 

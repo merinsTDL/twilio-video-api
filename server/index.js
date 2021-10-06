@@ -137,7 +137,7 @@ app.get('/completeRoom', async function(request, response, next) {
 
 // Create http server and run it.
 var server = http.createServer(app);
-var port = 3000;
+var port = 3002;
 server.listen(port, function() {
   console.log('Express server running on *:' + port);
 });

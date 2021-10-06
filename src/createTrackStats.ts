@@ -91,9 +91,9 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
             label: key,
             valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
           });
-          settingStat.setText(String(trackSettings[key as keyof MediaTrackSettings]));
           trackSettingKeyToLabeledStat.set(key, settingStat);
         }
+        settingStat.setText(String(trackSettings[key as keyof MediaTrackSettings]));
       }
     });
   }
@@ -141,8 +141,6 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     started.setText(`${track.isStarted}`);
     muted.setText(`${track.mediaStreamTrack.muted}`);
     trackEnabled.setText(`${track.isEnabled}`);
-
-    console.log('makarand: updating stats');
     updateTrackSettings();
     if (isVideoTrack(track)) {
       const { width, height } = track.dimensions;

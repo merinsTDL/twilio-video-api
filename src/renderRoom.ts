@@ -19,6 +19,7 @@ import {
 import { IRenderedRemoteParticipant, renderRemoteParticipant } from './renderRemoteParticipant';
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
+import { logLevelSelector } from './logutils';
 // Create your style.
 const style = {
   background_gray: {
@@ -122,20 +123,6 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
   // });
 }
 
-function getCurrentLoggerLevelAsString(logger: Log.Logger): string {
-  const currentLevel = logger.getLevel();
-  console.log('logger currentLevel = ', currentLevel);
-  const levelNumToString = new Map<number, string>() ;
-  levelNumToString.set(logger.levels.TRACE, 'TRACE');
-  levelNumToString.set(logger.levels.DEBUG, 'DEBUG');
-  levelNumToString.set(logger.levels.INFO, 'INFO');
-  levelNumToString.set(logger.levels.WARN, 'WARN');
-  levelNumToString.set(logger.levels.ERROR, 'ERROR');
-  levelNumToString.set(logger.levels.SILENT, 'SILENT');
-  const currentLevelStr = levelNumToString.get(currentLevel) as string;
-  return currentLevelStr;
-}
-
 export async function renderRoomDetails({ room, container, restCreds, logger }: {
   room: Room,
   container: HTMLElement,
@@ -144,20 +131,11 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
 }) {
   const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Room Details`, divClass: sheet.classes.roomContainer, startHidden: true });
   container = innerDiv;
-  const options  = Object.keys(logger.levels);
-  const currentLevel = getCurrentLoggerLevelAsString(logger);
-  const logLevelSelect = createSelection({
-    id: 'logLevel',
-    container,
-    options,
-    title: 'logLevel',
-    onChange: () => {
-      log2(`setting logLevel: ${logLevelSelect.getValue()} for ${room.localParticipant.identity} in ${room.sid}`);
-      logger.setLevel(logLevelSelect.getValue() as Log.LogLevelDesc);
-    }
-  });
+  // const options  = Object.keys(logger.levels);
+  // const currentLevel = getCurrentLoggerLevelAsString(logger);
 
-  logLevelSelect.setValue(currentLevel);
+  const logLevelSelect = logLevelSelector({ container, logger });
+  // logLevelSelect.setValue(currentLevel);
 
   if (restCreds !== null) {
     renderExtraRoomInformation({ room, container, restCreds });

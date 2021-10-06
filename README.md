@@ -38,7 +38,7 @@ server by defaults listens to requests on port 3000
 There are two ways to open the app. You can use online version or you can run it locally. To run online version point your browser to: https://makarandp0.github.io/twilio-video-api/
 
 
-Tu run it locally:
+Run it locally:
 
 ```
 npm start
@@ -62,7 +62,8 @@ app supports various url parameters
 | autoAudio       | if specified app creates local audio track at startup  |  `false`  |
 | extraInfo       | if specified app renders links to room properties      |  `false`  |
 | sendLogs        | if specified app sends console logs over data channel. Useful for testing mobile->desktop | `false` |
-| maxParticipants | if 51 or larger then large group room is created  |  ``  |
+| logLevel        | if specified used as default log level | `WARN` |
+| maxParticipants | if 51 or larger then large group room is created  | 51 if `topology === large-room`  |
 | topology        | type of room to use  |  `group-small`  |
 | env             | backend environment to use  |  `prod`  |
 | connectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
@@ -76,4 +77,4 @@ The page will join room `foo` with `mak` as local identity and publish a video a
 
 
 # Online demo
-This app is hosted at https://makarandp0.github.io/twilio-video-api/. It requires that you run your [token server](https://github.com/makarandp0/twilio-video-api/tree/main/server) on localhost port 3000 or pass `Server` parameter pointing to where the server is running.
+This app is hosted at https://makarandp0.github.io/twilio-video-api/. It requires that you run your [token server](https://github.com/makarandp0/twilio-video-api/tree/main/server) on localhost port 3002 or pass `Server` parameter pointing to where the server is running.

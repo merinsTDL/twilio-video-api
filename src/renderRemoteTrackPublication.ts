@@ -84,7 +84,7 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
   }
 
   trackPublication.on('subscribed', function (track) {
-    log2(`Subscribed to ${trackPublication.kind}:${track.name}`);
+    log2(`Subscribed to ${trackPublication.kind}:${track.name}`, track);
     renderRemoteTrack();
   });
 
