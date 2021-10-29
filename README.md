@@ -1,6 +1,6 @@
 # twilio-video-api
 
-This app demonstrates usage of twilio-video sdk. The purpose is to be able to quickly test the api. It allows you to connect multiple participants to  twilio-video room, and publish media.
+This app demonstrates usage of twilio-video sdk.  It allows you to connect multiple participants to  twilio-video room, and publish media.
 
 # Setup
 - Step 1: clone the repo
