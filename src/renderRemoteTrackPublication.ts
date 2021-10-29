@@ -6,7 +6,9 @@ import {
   LocalVideoTrack,
   RemoteAudioTrack,
   RemoteVideoTrack,
-  RemoteTrackPublication
+  RemoteTrackPublication,
+  RemoteAudioTrackStats,
+  RemoteVideoTrackStats
 } from 'twilio-video';
 
 import { IRenderedRemoteMediaTrack, renderRemoteMediaTrack } from './renderRemoteMediaTrack';
@@ -40,9 +42,7 @@ sheet.attach();
 
 
 export type IRenderedRemoteTrackPublication = {
-  setBytesReceived: (bytesReceived: number, timestamp: number) => void;
-  setFPS: (fps: number) => void;
-  setAudioLevel: (audioLevel: number) => void;
+  updateRemoteTrackStats: (trackStats: RemoteVideoTrackStats|RemoteAudioTrackStats) => void
   trackPublication: RemoteTrackPublication;
   container: HTMLElement;
   stopRendering: () => void;
@@ -94,19 +94,9 @@ export function renderRemoteTrackPublication(trackPublication: RemoteTrackPublic
   });
 
   return {
-    setBytesReceived: (bytesReceived: number, timeStamp: number) => {
+    updateRemoteTrackStats: (trackStats: RemoteVideoTrackStats|RemoteAudioTrackStats) => {
       if (renderedTrack) {
-        renderedTrack.setBytesReceived(bytesReceived, timeStamp);
-      }
-    },
-    setFPS: (fps: number) => {
-      if (renderedTrack) {
-        renderedTrack.setFPS(fps);
-      }
-    },
-    setAudioLevel: (audioLevel: number) => {
-      if (renderedTrack) {
-        renderedTrack.setAudioLevel(audioLevel);
+        renderedTrack.updateRemoteTrackStats(trackStats);
       }
     },
     trackPublication,

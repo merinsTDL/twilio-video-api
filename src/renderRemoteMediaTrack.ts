@@ -1,4 +1,4 @@
-import { RemoteAudioTrack, RemoteTrackPublication, RemoteVideoTrack } from '../../../work/twilio-video.js/tsdef';
+import { RemoteAudioTrack, RemoteAudioTrackStats, RemoteTrackPublication, RemoteVideoTrack, RemoteVideoTrackStats } from 'twilio-video';
 import { createButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { createLabeledStat, ILabeledStat } from './components/labeledstat';
@@ -32,9 +32,7 @@ const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
 export type IRenderedRemoteMediaTrack = {
-  setBytesReceived: (bytesReceived: number, timestamp: number) => void;
-  setFPS: (fps: number) => void;
-  setAudioLevel: (audioLevel: number) => void;
+  updateRemoteTrackStats: (trackStats: RemoteVideoTrackStats|RemoteAudioTrackStats) => void;
   stopRendering: () => void;
 }
 
@@ -50,6 +48,15 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
     valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
   });
   statBytes.setText('0');
+  const codec = createLabeledStat({
+    container: trackBytesDiv,
+    label: 'codec',
+  });
+  const ssrc = createLabeledStat({
+    container: trackBytesDiv,
+    label: 'ssrc',
+  });
+
   if (videoTrack) {
     trackFPS = createLabeledStat({
       container: trackBytesDiv,
@@ -132,20 +139,26 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
   let previousBytes = 0;
   let previousTime = 0;
   return {
-    setBytesReceived: (bytesReceived: number, timeStamp: number) => {
+    updateRemoteTrackStats: (trackStats: RemoteVideoTrackStats|RemoteAudioTrackStats) => {
+      const bytesReceived = trackStats.bytesReceived || 0;
+      const videoTrackStats = track.kind === 'video' ? trackStats as RemoteVideoTrackStats : null;
+      const audioTrackStats = track.kind === 'audio' ? trackStats as RemoteAudioTrackStats : null;
       if (statBytes) {
         const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
-        const kBitsPerSecond = round((bytesReceived - previousBytes) / (timeStamp - previousTime)) * 10;
+        const kBitsPerSecond = round((bytesReceived - previousBytes) / ((trackStats.timestamp - previousTime)) * 10);
         previousBytes = bytesReceived;
-        previousTime = timeStamp;
+        previousTime = trackStats.timestamp;
         statBytes.setText(kBitsPerSecond.toString());
       }
-    },
-    setFPS: (fps: number) => {
-      trackFPS.setText(fps.toString());
-    },
-    setAudioLevel: (audioLevel: number) => {
-      trackAudioLevel.setText(audioLevel.toString());
+      if (audioTrackStats && audioTrackStats.audioLevel) {
+        trackAudioLevel.setText(audioTrackStats.audioLevel.toString());
+      }
+      if (videoTrackStats && videoTrackStats.frameRate) {
+        trackFPS.setText(videoTrackStats.frameRate.toString());
+      }
+
+      ssrc.setText(trackStats.ssrc);
+      codec.setText(trackStats.ssrc + ":" + trackStats.codec || "null");
     },
     stopRendering: () => {
       renderedTrack.stopRendering();

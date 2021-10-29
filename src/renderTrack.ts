@@ -6,6 +6,7 @@ import { createTrackStats } from './createTrackStats';
 import { AudioTrack, VideoTrack, RemoteVideoTrack, RemoteAudioTrack, LocalAudioTrack, LocalVideoTrack } from 'twilio-video';
 
 import jss from './jss'
+import { setupAudioSyncDevices } from './setupAudioSyncDevices';
 
 // Create your style.
 const style = {
@@ -31,6 +32,7 @@ sheet.attach();
  */
 export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   const audioElement = container.appendChild(track.attach());
+  audioElement.controls = true;
   const wave = waveform({ mediaStream: audioElement.srcObject as MediaStream, width: 200, height: 150 })
   const canvasContainer = createDiv(container, 'canvasContainer');
   canvasContainer.appendChild(wave.element);
@@ -43,6 +45,7 @@ export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
 
 export function attachVideoTrack(track: VideoTrack, container: HTMLElement) {
   const videoElement = track.attach();
+  videoElement.controls = true;
   videoElement.classList.add(sheet.classes.videoElement);
   container.appendChild(videoElement);
   return {
@@ -84,6 +87,17 @@ export function renderTrack({ track, container, autoAttach } : {
       createButton('pause', mediaControls, () => audioVideoElement?.pause());
       createButton('play', mediaControls, () => audioVideoElement?.play());
       createButton('update', mediaControls, () => updateMediaElementState());
+
+      // @ts-ignore
+      const setSinkId = audioVideoElement.setSinkId ? audioVideoElement.setSinkId.bind(audioVideoElement) : null;
+      if (setSinkId) {
+        createButton('setupSink', mediaControls, () => {
+          if (mediaControls) {
+            setupAudioSyncDevices(mediaControls, setSinkId);
+          }
+        });
+      }
+
       const isPlaying = createLabeledStat({
         container: mediaControls,
         label: 'playing',

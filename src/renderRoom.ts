@@ -277,34 +277,20 @@ export async function renderRoom({ room, container, shouldAutoAttach, restCreds,
     statReports.forEach(statReport => {
       // statReport.localVideoTrackStats, can have multiple entries for a local video tracks when simulcast is enabled.
       // fold them into single entry.
-      const videoTrackStats = new Map<string, LocalVideoTrackStats[]>();
+      const trackSidToLayerStats = new Map<string, LocalVideoTrackStats[]>();
       statReport.localVideoTrackStats.forEach((trackStat: LocalVideoTrackStats) => {
-        let statArray = videoTrackStats.get(trackStat.trackSid);
+        let statArray = trackSidToLayerStats.get(trackStat.trackSid);
         if (statArray) {
           statArray.push(trackStat);
         } else {
-          videoTrackStats.set(trackStat.trackSid, [trackStat]);
+          trackSidToLayerStats.set(trackStat.trackSid, [trackStat]);
         }
       });
 
-      Array.from(videoTrackStats.values()).forEach(statArray => updateLocalTrackStats(room, statArray));
-
-      // { room, trackId, trackSid, bytesSent, timestamp }
+      Array.from(trackSidToLayerStats.values()).forEach(statArray => updateLocalTrackStats(room, statArray));
       statReport.localAudioTrackStats.forEach(localAudioTrackStats => updateLocalTrackStats(room, [localAudioTrackStats]));
-
-      statReport.remoteAudioTrackStats.forEach((trackStat: RemoteAudioTrackStats) => {
-        const { trackSid, timestamp, audioLevel } = trackStat;
-        const bytesReceived = trackStat.bytesReceived || 0;
-        renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
-          renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp, audioLevel, fps: null });
-        })
-      });
-      statReport.remoteVideoTrackStats.forEach((trackStat: RemoteVideoTrackStats) => {
-        const { trackSid, timestamp, frameRate } = trackStat;
-        const bytesReceived = trackStat.bytesReceived || 0;
-        renderedParticipants.forEach((renderedParticipant: IRenderedRemoteParticipant, participantSid: Participant.SID) => {
-          renderedParticipant.updateStats({ trackSid, bytesReceived, timestamp, audioLevel: null, fps: frameRate });
-        })
+      [...statReport.remoteAudioTrackStats, ...statReport.remoteVideoTrackStats].forEach(trackStats => {
+        renderedParticipants.forEach(renderedParticipant => renderedParticipant.updateRemoteTrackStats(trackStats));
       });
     })
   }, 1000);

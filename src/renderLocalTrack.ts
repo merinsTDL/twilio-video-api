@@ -167,6 +167,27 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
     });
   });
 
+  if (track.kind === 'video') {
+    createButton('restart SD', localTrackControls, () => {
+      track.restart({
+        width: 200,
+        height: 200
+      }).catch((err: Error) => {
+        console.log('track.restart failed', err);
+      });
+    });
+
+    createButton('restart HD', localTrackControls, () => {
+      track.restart({
+        width: 1280,
+        height: 720
+      }).catch((err: Error) => {
+        console.log('track.restart failed', err);
+      });
+    });
+  }
+
+
   videoDevices.forEach(device => {
     createButton(`restart: ${device.label}`, localTrackControls, () => {
       const videoConstraints = {

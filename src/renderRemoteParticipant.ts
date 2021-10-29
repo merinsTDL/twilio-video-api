@@ -1,6 +1,8 @@
 import { createDiv } from './components/createDiv';
 import {
+  RemoteAudioTrackStats,
   RemoteParticipant,
+  RemoteVideoTrackStats,
   Room,
   Track
 } from 'twilio-video';
@@ -9,7 +11,7 @@ import { IRenderedRemoteTrackPublication, renderRemoteTrackPublication } from ".
 
 export type IRenderedRemoteParticipant = {
   container: HTMLElement;
-  updateStats: ({ trackSid, bytesReceived, audioLevel, timestamp } : { trackSid: string, bytesReceived: number, audioLevel: number|null, timestamp: number, fps: number|null }) => void;
+  updateRemoteTrackStats: (trackStats: RemoteAudioTrackStats|RemoteVideoTrackStats) => void;
   stopRendering: () => void;
 }
 
@@ -140,18 +142,10 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
   });
   return {
     container,
-    updateStats: ({ trackSid, bytesReceived, timestamp, fps, audioLevel }: { trackSid: string; bytesReceived: number; timestamp: number; audioLevel: number|null, fps: number|null}) => {
+    updateRemoteTrackStats(trackStats: RemoteVideoTrackStats|RemoteAudioTrackStats) {
       renderedPublications.forEach((renderedTrackpublication: IRenderedRemoteTrackPublication, renderedTrackSid: Track.SID) => {
-        if (trackSid === renderedTrackSid) {
-          renderedTrackpublication.setBytesReceived(bytesReceived, timestamp);
-          if (fps !== null) {
-            console.log('TrackFPS: ', fps)
-            renderedTrackpublication.setFPS(fps);
-          }
-          if (audioLevel !== null) {
-            renderedTrackpublication.setAudioLevel(audioLevel);
-          }
-
+        if (trackStats.trackSid === renderedTrackSid) {
+          renderedTrackpublication.updateRemoteTrackStats(trackStats);
         }
       });
     },

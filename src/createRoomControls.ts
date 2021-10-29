@@ -165,6 +165,17 @@ export function createRoomControls(
     }
   });
 
+  const roomCodecsSelect = createSelection({
+    id: 'roomCodecs',
+    container: selectionDiv,
+    options: ['', 'VP8', 'H264', 'H264,VP8', 'VP8,H264'],
+    title: ' roomCodecs: ',
+    labelClasses: [],
+    onChange: () => {
+      log('codec change:', roomCodecsSelect.getValue());
+    }
+  });
+
   let extraConnectOptions: { value: string; };
   const envSelect = createSelection({
     id: 'env',
@@ -225,7 +236,7 @@ export function createRoomControls(
   // container, labelText, id
   const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });
   const autoAttach = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Attach', id: 'autoAttach' });
-  const autoJoin = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Join', id: 'autoJoin' });
+  // const autoJoin = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Join', id: 'autoJoin' });
   const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extra Info', id: 'extraInfo' });
   const sendLogs = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'send logs', id: 'sendLogs' });
   const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Record Participant', id: 'recordParticipant' });
@@ -258,9 +269,8 @@ export function createRoomControls(
   const defaultOptions = {
     networkQuality: { local: 1, remote: 0 },
     dominantSpeaker: true,
-    // preferredVideoCodecs: [{ codec: "VP8", "simulcast": true }],
     preferredVideoCodecs: 'auto',
-    preferredAudioCodecs: [{ codec: "opus", dtx: true }],
+    // preferredAudioCodecs: [{ codec: "opus", dtx: true }],
     // preferredAudioCodecs: [],
     bandwidthProfile: {
       video: {
@@ -271,13 +281,14 @@ export function createRoomControls(
   };
 
   extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(defaultOptions, null, 4);
-  autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
+  // autoJoin.checked = urlParams.has('room') && urlParams.has('autoJoin');
   autoAttach.checked = getBooleanUrlParam('autoAttach', true);
   autoPublish.checked = getBooleanUrlParam('autoPublish', true);
   autoRecord.checked = getBooleanUrlParam('record', false);
   extraInfo.checked = getBooleanUrlParam('extraInfo', false);
   sendLogs.checked = getBooleanUrlParam('sendLogs', false);
   topologySelect.setValue(urlParams.get('topology') || 'group-small');
+  roomCodecsSelect.setValue(urlParams.get('roomCodecs') || '');
   envSelect.setValue(urlParams.get('env') || 'prod');
 
   async function getRoomCredentials(): Promise<{token: string, environment: string}> {
@@ -295,7 +306,14 @@ export function createRoomControls(
       topology = 'group';
     }
 
-    const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect, maxParticipants };
+
+    let videoCodecs = '';
+    let roomCodecs = roomCodecsSelect.getValue();
+    if (roomCodecs) {
+      videoCodecs = JSON.stringify(roomCodecs.split(','));
+    }
+
+    const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect, maxParticipants, videoCodecs };
     console.log('Getting Token For: ', tokenOptions);
     url.search = (new URLSearchParams(tokenOptions)).toString();
     try {
@@ -382,7 +400,7 @@ export function createRoomControls(
   });
   btnJoin.btn.classList.add(sheet.classes.joinRoomButton);
 
-  if (autoJoin.checked) {
+  if (urlParams.has('autoJoin')) {
     btnJoin.click();
   }
 
