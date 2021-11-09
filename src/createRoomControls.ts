@@ -168,7 +168,7 @@ export function createRoomControls(
   const roomCodecsSelect = createSelection({
     id: 'roomCodecs',
     container: selectionDiv,
-    options: ['', 'VP8', 'H264', 'H264,VP8', 'VP8,H264'],
+    options: ['default', 'VP8', 'H264', 'H264,VP8', 'VP8,H264'],
     title: ' roomCodecs: ',
     labelClasses: [],
     onChange: () => {
@@ -288,7 +288,7 @@ export function createRoomControls(
   extraInfo.checked = getBooleanUrlParam('extraInfo', false);
   sendLogs.checked = getBooleanUrlParam('sendLogs', false);
   topologySelect.setValue(urlParams.get('topology') || 'group-small');
-  roomCodecsSelect.setValue(urlParams.get('roomCodecs') || '');
+  roomCodecsSelect.setValue(urlParams.get('roomCodecs') || 'default');
   envSelect.setValue(urlParams.get('env') || 'prod');
 
   async function getRoomCredentials(): Promise<{token: string, environment: string}> {
@@ -307,11 +307,9 @@ export function createRoomControls(
     }
 
 
-    let videoCodecs = '';
+
     let roomCodecs = roomCodecsSelect.getValue();
-    if (roomCodecs) {
-      videoCodecs = JSON.stringify(roomCodecs.split(','));
-    }
+    let videoCodecs = roomCodecs === 'default' ? '' : JSON.stringify(roomCodecs.split(','));
 
     const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect, maxParticipants, videoCodecs };
     console.log('Getting Token For: ', tokenOptions);

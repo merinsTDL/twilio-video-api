@@ -51,10 +51,6 @@ function checkVisibility() {
 }
 
 
-// export function pcdemo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
-//   main(containerDiv);
-// }
-
 export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLElement) {
   // link to source code
   createLink({ container: containerDiv, linkText: 'Twilio-Video-API-Demo', linkUrl: 'https://github.com/makarandp0/twilio-video-api', newTab: true });

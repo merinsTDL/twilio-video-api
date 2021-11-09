@@ -129,22 +129,7 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   restCreds: REST_CREDENTIALS|null,
   logger: Log.Logger
 }) {
-  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Room Details`, divClass: sheet.classes.roomContainer, startHidden: true });
-  container = innerDiv;
-  // const options  = Object.keys(logger.levels);
-  // const currentLevel = getCurrentLoggerLevelAsString(logger);
-
-  const logLevelSelect = logLevelSelector({ container, logger });
-  // logLevelSelect.setValue(currentLevel);
-
-  if (restCreds !== null) {
-    renderExtraRoomInformation({ room, container, restCreds });
-  }
-
-  createLabeledStat({ container, label: 'room.sid' }).setText(room.sid);
-  createLabeledStat({ container, label: 'localParticipant.sid' }).setText(room.localParticipant.sid);
-
-  const roomState = createLabeledStat({
+  const roomStateAndSid = createLabeledStat({
     container,
     label: 'state',
     valueMapper: (text: string) => {
@@ -157,6 +142,19 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
       }
    }
   });
+  roomStateAndSid.setLabel(room.sid);
+  roomStateAndSid.setText(room.state)
+
+  const { innerDiv, outerDiv: collapsible }  = createCollapsibleDiv({ container, headerText: `Room Details`, divClass: sheet.classes.roomContainer, startHidden: true });
+  container = innerDiv;
+  const logLevelSelect = logLevelSelector({ container, logger });
+  if (restCreds !== null) {
+    renderExtraRoomInformation({ room, container, restCreds });
+  }
+
+  // createLabeledStat({ container, label: 'room.sid' }).setText(room.sid);
+  createLabeledStat({ container, label: 'localParticipant.sid' }).setText(room.localParticipant.sid);
+
   const recording = createLabeledStat({
     container,
     label: 'isRecording',
@@ -194,7 +192,7 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   room.localParticipant.addListener('networkQualityLevelChanged', updateNetworkQuality);
 
   const updateRecordingState = () => recording.setText(`${room.isRecording}`);
-  const updateRoomState = () => roomState.setText(room.state);
+  const updateRoomState = () => roomStateAndSid.setText(room.state);
 
   const mosScore = createLabeledStat({
     container,

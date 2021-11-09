@@ -47,14 +47,11 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
     label: 'received kbps',
     valueMapper: (text: string) => text === '0' ? sheet.classes.background_yellow : undefined
   });
+
   statBytes.setText('0');
-  const codec = createLabeledStat({
+  const codecAndSsrc = createLabeledStat({
     container: trackBytesDiv,
     label: 'codec',
-  });
-  const ssrc = createLabeledStat({
-    container: trackBytesDiv,
-    label: 'ssrc',
   });
 
   if (videoTrack) {
@@ -157,8 +154,8 @@ export function renderRemoteMediaTrack(track: RemoteAudioTrack | RemoteVideoTrac
         trackFPS.setText(videoTrackStats.frameRate.toString());
       }
 
-      ssrc.setText(trackStats.ssrc);
-      codec.setText(trackStats.ssrc + ":" + trackStats.codec || "null");
+      codecAndSsrc.setLabel(trackStats.codec || "null");
+      codecAndSsrc.setText("ssrc:" + trackStats.ssrc);
     },
     stopRendering: () => {
       renderedTrack.stopRendering();

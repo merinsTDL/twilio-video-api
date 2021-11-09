@@ -66,6 +66,7 @@ app supports various url parameters
 | maxParticipants | if 51 or larger then large group room is created  | 51 if `topology === large-room`  |
 | topology        | type of room to use  |  `group-small`  |
 | env             | backend environment to use  |  `prod`  |
+| roomCodecs      | create room with specific codec support  |  none  |
 | connectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
 | server          | server to use to acquire token to join video room |  `http://localhost:3000`  |
 

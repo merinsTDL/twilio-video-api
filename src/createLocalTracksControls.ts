@@ -3,13 +3,14 @@ import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
 import { syntheticAudio } from './components/syntheticaudio';
 import { syntheticVideo }  from './components/syntheticvideo';
-
+import { log } from './components/log';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { getDeviceSelectionOptions } from './getDeviceSelectionOptions';
 import { IRenderedLocalTrack, renderLocalTrack } from './renderLocalTrack';
-import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack, Track } from 'twilio-video';
+import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack, Track, CreateLocalTrackOptions } from 'twilio-video';
 
 import jss from './jss'
+import { createLabeledInput } from './components/createLabeledInput';
 
 type localTrack = LocalAudioTrack | LocalVideoTrack;
 
@@ -26,8 +27,17 @@ const style = {
     'text-align': 'left',
     'display': 'flex',
     'flex-flow': 'row wrap'
+  },
+  constraintsLabel: {
+    width: '100%',
+    'text-align': 'center',
+    'margin-top': '10px',
+    'margin-right': '10px',
+  },
+  constraintsInput: {
+    width: '100%',
+    padding: '0.5em'
   }
-
 }
 // Compile styles, apply plugins.
 const sheet = jss.createStyleSheet(style)
@@ -55,8 +65,8 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     localTrack: LocalAudioTrack | LocalVideoTrack,
     videoDevices?: MediaDeviceInfo[]
   }) {
-    console.log('Track settings: ', localTrack.mediaStreamTrack.getSettings && localTrack.mediaStreamTrack.getSettings());
-    console.log('Track capabilities: ', localTrack.mediaStreamTrack.getCapabilities && localTrack.mediaStreamTrack.getCapabilities());
+    log('Track settings: ', localTrack.mediaStreamTrack.getSettings && localTrack.mediaStreamTrack.getSettings());
+    log('Track capabilities: ', localTrack.mediaStreamTrack.getCapabilities && localTrack.mediaStreamTrack.getCapabilities());
     localTracks.push(localTrack);
     renderedTracks.set(localTrack, renderLocalTrack({
       container: localTracksContainer,
@@ -83,9 +93,25 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
   }
 
+  const constraintsInput = createLabeledInput({
+    container: localTrackButtonsContainer,
+    labelText: 'Track Constraints: ',
+    placeHolder: 'Optional, ex:\n{ "frameRate": 1, "width": 120 }',
+    labelClasses: [sheet.classes.constraintsLabel],
+    inputClasses: [sheet.classes.constraintsInput],
+    inputType: 'textarea'
+  });
+
+  function getLocalTrackOptions(defaultName: string) : CreateLocalTrackOptions {
+    const  trackOptions = constraintsInput.value === '' ? { logLevel: 'warn', name: defaultName } : JSON.parse(constraintsInput.value);
+    log('Track Options:', JSON.stringify(trackOptions));
+    return trackOptions
+  }
+
   const btnPreviewAudio = createButton('+ Local Audio', localTrackButtonsContainer, async () => {
     const thisTrackName = 'mic-' + number++;
-    const localTrack = await Video.createLocalAudioTrack({ logLevel: 'warn', name: thisTrackName });
+    const trackOptions = getLocalTrackOptions(thisTrackName);
+    const localTrack = await Video.createLocalAudioTrack(trackOptions);
     manageLocalTrack({ localTrack, trackName: thisTrackName });
   });
 
@@ -100,7 +126,8 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
   // eslint-disable-next-line no-unused-vars
   const btnPreviewVideo = createButton('+ Local Video', localTrackButtonsContainer, async () => {
     const thisTrackName = 'camera-' + number++;
-    const localTrack = await Video.createLocalVideoTrack({ width: 1280, height: 720, logLevel: 'warn', name: thisTrackName });
+    const trackOptions = getLocalTrackOptions(thisTrackName);
+    const localTrack = await Video.createLocalVideoTrack(trackOptions);
     manageLocalTrack({ localTrack, trackName: thisTrackName });
   });
 
@@ -127,7 +154,11 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     enumerateBtn.disable();
     const devices = await getDeviceSelectionOptions();
     devices.videoinput.forEach((device, i, videoDevices) => {
-      createButton(device.label, localTrackButtonsContainer, async () => {
+      const { deviceId, label } = device;
+      console.log({ deviceId, label });
+      log({ deviceId, label });
+      console.log({ deviceId, label });
+    createButton(device.label, localTrackButtonsContainer, async () => {
         const videoConstraints = {
           deviceId: { exact: device.deviceId },
           // height: 480, width: 640, frameRate: 24

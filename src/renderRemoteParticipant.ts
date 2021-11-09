@@ -6,7 +6,6 @@ import {
   Room,
   Track
 } from 'twilio-video';
-import { createHeader } from './createHeader';
 import { IRenderedRemoteTrackPublication, renderRemoteTrackPublication } from "./renderRemoteTrackPublication";
 
 export type IRenderedRemoteParticipant = {
@@ -114,10 +113,23 @@ export function renderRemoteParticipant(participant: RemoteParticipant, containe
 
   let outerDiv: HTMLFieldSetElement;
   ({ innerDiv: container, outerDiv } = createCollapsibleDiv({ container, headerText: participant.identity, divClass: sheet.classes.participantDiv}))
-  // container = createDiv(container, sheet.classes.participantDiv, `participantContainer-${participant.identity}`);
-  // createLabeledStat({ container, label: 'class' }).setText('RemoteParticipant');
-  // createLabeledStat({ container, label: 'identity' }).setText(participant.identity);
-  createLabeledStat({ container, label: 'sid' }).setText(participant.sid);
+  const participantSidAndState = createLabeledStat({
+    container,
+    label: 'state',
+    valueMapper: (text: string) => {
+      switch(text) {
+        case 'connected': return undefined;
+        case 'reconnecting': return sheet.classes.background_yellow;
+        case 'disconnected': return sheet.classes.background_red;
+        default:
+          return sheet.classes.background_red;
+      }
+   }
+  });
+  participantSidAndState.setLabel(participant.sid);
+  participantSidAndState.setText(participant.state);
+  participant.on('reconnecting', () => participantSidAndState.setText(participant.state))
+  participant.on('reconnected', () => participantSidAndState.setText(participant.state))
 
   if (restCreds !== null) {
     remoteParticipantRestAPI(participant, container, room, restCreds);
