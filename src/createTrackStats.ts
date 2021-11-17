@@ -2,6 +2,7 @@ import { sheets } from 'jss';
 import { AudioTrack, LocalAudioTrack, LocalVideoTrack, RemoteAudioTrack, RemoteVideoTrack, VideoTrack } from 'twilio-video';
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { createDiv } from './components/createDiv';
+import { createElement } from './components/createElement';
 import { ILabeledStat, createLabeledStat } from './components/labeledstat';
 import jss from './jss'
 
@@ -77,6 +78,21 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     valueMapper: (text: string) => text === 'true' ? sheet.classes.background_yellow : undefined
   });
 
+  const started = createLabeledStat({
+    container,
+    label: 'Track.started',
+    valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
+  });
+
+  const trackEnabled = createLabeledStat({
+    container,
+    label: 'Track.enabled',
+    valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
+  });
+
+  // line separator between settings
+  createElement({ container, type: 'hr'});
+
   const trackSettingKeyToLabeledStat = new Map<string, ILabeledStat>();
   function updateTrackSettings() {
     const trackSettings = track.mediaStreamTrack.getSettings();
@@ -93,33 +109,14 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
           });
           trackSettingKeyToLabeledStat.set(key, settingStat);
         }
-        settingStat.setText(String(trackSettings[key as keyof MediaTrackSettings]));
+        let statValue = trackSettings[key as keyof MediaTrackSettings];
+        if (typeof statValue === 'number') {
+          statValue = Math.round(statValue * 100) / 100;
+        }
+        settingStat.setText(String(statValue));
       }
     });
   }
-
-  let dimensions: ILabeledStat;
-  let fps: ILabeledStat;
-
-  if (isVideoTrack(track)) {
-    dimensions = createLabeledStat({ container, label: 'dimensions' });
-    track.on('dimensionsChanged', () => updateStats());
-    fps = createLabeledStat({ container, label: 'FPS' });
-  } else {
-    // workaroundBackgroundNoiseWhenMuted(track as RemoteAudioTrack);
-  }
-
-  const started = createLabeledStat({
-    container,
-    label: 'Track.started',
-    valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
-  });
-
-  const trackEnabled = createLabeledStat({
-    container,
-    label: 'Track.enabled',
-    valueMapper: (text: string) => text === 'false' ? sheet.classes.background_yellow : undefined
-  });
 
   function listenOnMSTrack(msTrack: MediaStreamTrack) {
     msTrack.addEventListener('ended', () => updateStats());
@@ -127,6 +124,7 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     msTrack.addEventListener('unmute', () => updateStats());
   }
 
+  track.on('dimensionsChanged', () => updateStats());
   track.on('disabled', () => updateStats());
   track.on('enabled', () => updateStats());
   track.on('stopped', () => updateStats());
@@ -142,14 +140,6 @@ export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | Remo
     muted.setText(`${track.mediaStreamTrack.muted}`);
     trackEnabled.setText(`${track.isEnabled}`);
     updateTrackSettings();
-    if (isVideoTrack(track)) {
-      const { width, height } = track.dimensions;
-      dimensions.setText(`w${width} x h${height}`);
-
-      const frameRate = track.mediaStreamTrack.getSettings().frameRate;
-      const frameRateText = typeof frameRate === 'number' ? String(Math.round(frameRate)) : '0';
-      fps.setText(frameRateText);
-    }
   }
 
   return { updateStats };

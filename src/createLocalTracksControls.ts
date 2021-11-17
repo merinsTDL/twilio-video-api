@@ -11,6 +11,7 @@ import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack, Track, CreateLocalT
 
 import jss from './jss'
 import { createLabeledInput } from './components/createLabeledInput';
+import { IRoomControl } from './createRoomControls';
 
 type localTrack = LocalAudioTrack | LocalVideoTrack;
 
@@ -27,36 +28,24 @@ const style = {
     'text-align': 'left',
     'display': 'flex',
     'flex-flow': 'row wrap'
-  },
-  constraintsLabel: {
-    width: '100%',
-    'text-align': 'center',
-    'margin-top': '10px',
-    'margin-right': '10px',
-  },
-  constraintsInput: {
-    width: '100%',
-    padding: '0.5em'
   }
 }
 // Compile styles, apply plugins.
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
-export function createLocalTracksControls({ buttonContainer, container, rooms, Video, localTracks, shouldAutoAttach, shouldAutoPublish } : {
-  buttonContainer: HTMLElement, // parent for control buttons
+export function createLocalTracksControls({ roomControl, container, rooms, Video, localTracks } : {
+  roomControl: IRoomControl
   container: HTMLElement, // parent for tracks.
   rooms: Room[],
   Video: typeof import('twilio-video'),
-  localTracks: LocalTrack[],
-  shouldAutoAttach: () => boolean,
-  shouldAutoPublish: () => boolean
+  localTracks: LocalTrack[]
 }) {
   let number = 0;
   const autoAudio = getBooleanUrlParam('autoAudio', false);
   const autoVideo = getBooleanUrlParam('autoVideo', false);
 
-  const localTrackButtonsContainer = createDiv(buttonContainer, sheet.classes.trackButtonsContainer);
+  const localTrackButtonsContainer = createDiv(roomControl.getRoomControlsDiv(), sheet.classes.trackButtonsContainer);
   const localTracksContainer = createDiv(container, sheet.classes.trackRenders);
 
   const renderedTracks = new Map<LocalTrack, IRenderedLocalTrack>();
@@ -74,8 +63,8 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
       track: localTrack,
       videoDevices,
       trackName,
-      autoAttach: shouldAutoAttach(),
-      autoPublish: shouldAutoPublish(),
+      autoAttach: roomControl.shouldAutoAttach(),
+      autoPublish: roomControl.shouldAutoPublish(),
       onClosed: () => {
         const index = localTracks.indexOf(localTrack);
         if (index > -1) {
@@ -93,17 +82,9 @@ export function createLocalTracksControls({ buttonContainer, container, rooms, V
     renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
   }
 
-  const constraintsInput = createLabeledInput({
-    container: localTrackButtonsContainer,
-    labelText: 'Track Constraints: ',
-    placeHolder: 'Optional, ex:\n{ "frameRate": 1, "width": 120 }',
-    labelClasses: [sheet.classes.constraintsLabel],
-    inputClasses: [sheet.classes.constraintsInput],
-    inputType: 'textarea'
-  });
-
   function getLocalTrackOptions(defaultName: string) : CreateLocalTrackOptions {
-    const  trackOptions = constraintsInput.value === '' ? { logLevel: 'warn', name: defaultName } : JSON.parse(constraintsInput.value);
+    const trackConstraints = roomControl.getTrackConstraints();
+    const  trackOptions = trackConstraints === '' ? { logLevel: 'warn', name: defaultName } : JSON.parse(trackConstraints);
     log('Track Options:', JSON.stringify(trackOptions));
     return trackOptions
   }

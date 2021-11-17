@@ -69,33 +69,30 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
   window._TwilioVideo = { Video, rooms };
   // @ts-ignore
   window.rooms = rooms;
-  const  { shouldAutoAttach, shouldAutoPublish, getRoomControlsDiv, getRoomCredentials } = createRoomControls(
+  const  roomControl = createRoomControls(
     container,
     Video,
     localTracks,
     roomJoined,
   );
 
-  const buttonContainer = getRoomControlsDiv();
+  const buttonContainer = roomControl.getRoomControlsDiv();
   const { roomAdded, roomRemoved, renderStandAloneMediaStreamTrack } = createLocalTracksControls({
-    buttonContainer,
+    roomControl,
     container,
     Video,
     localTracks,
-    rooms,
-    shouldAutoAttach,
-    shouldAutoPublish,
+    rooms
   });
 
-
   createButton('setupPreflight', buttonContainer, async () => {
-    const creds = await getRoomCredentials();
+    const creds = await roomControl.getRoomCredentials();
     setupPreflight({
       container: buttonContainer,
       token: creds.token,
       Video,
       environment: creds.environment,
-      renderMSTrack: msTrack => renderStandAloneMediaStreamTrack({ msTrack, autoAttach: shouldAutoAttach()})
+      renderMSTrack: msTrack => renderStandAloneMediaStreamTrack({ msTrack, autoAttach: roomControl.shouldAutoAttach()})
     })
   });
 
@@ -105,7 +102,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     rooms.push(room);
     roomAdded(room);
     log(`Joined ${room.sid} as "${room.localParticipant.identity}"`);
-    renderRoom({ room, container, shouldAutoAttach, restCreds, logger });
+    renderRoom({ room, container, shouldAutoAttach: roomControl.shouldAutoAttach, restCreds, logger });
     room.on('disconnected', (_, err) => {
       log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {

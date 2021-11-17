@@ -69,6 +69,7 @@ app supports various url parameters
 | roomCodecs      | create room with specific codec support  |  none  |
 | connectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
 | server          | server to use to acquire token to join video room |  `http://localhost:3000`  |
+| trackConstraints| constraints to use when creating a track |  ``  |
 
 
 when navigated to
