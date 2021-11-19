@@ -12,6 +12,7 @@ import { Room, LocalTrack, LocalAudioTrack, LocalVideoTrack, Track, CreateLocalT
 import jss from './jss'
 import { createLabeledInput } from './components/createLabeledInput';
 import { IRoomControl } from './createRoomControls';
+import { createSelection } from './components/createSelection';
 
 type localTrack = LocalAudioTrack | LocalVideoTrack;
 
@@ -28,6 +29,17 @@ const style = {
     'text-align': 'left',
     'display': 'flex',
     'flex-flow': 'row wrap'
+  },
+  roomControlsRow: {
+    'justify-content': 'center',
+    'align-items': 'center',
+    'width': "100%",
+    'flex-direction': 'row',
+    'display': 'flex',
+    'margin-top': '10px',
+  },
+  trackChoiceSelection: {
+    'font-size': 'large'
   }
 }
 // Compile styles, apply plugins.
@@ -89,46 +101,59 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
     return trackOptions
   }
 
-  const btnPreviewAudio = createButton('+ Local Audio', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'mic-' + number++;
-    const trackOptions = getLocalTrackOptions(thisTrackName);
-    const localTrack = await Video.createLocalAudioTrack(trackOptions);
-    manageLocalTrack({ localTrack, trackName: thisTrackName });
+  const trackSelectionDiv = createDiv(localTrackButtonsContainer, sheet.classes.roomControlsRow);
+
+  type LocalTrackType = 'Local Video' | 'Local Audio' | 'Synthetic Video' | 'Synthetic Audio' | 'Screen Share';
+  const trackChoice = createSelection({
+    container: trackSelectionDiv,
+    options: ['Local Video', 'Local Audio', 'Synthetic Video', 'Synthetic Audio', 'Screen Share'],
+    title: '',
+    labelClasses: [],
+    selectClasses: [sheet.classes.trackChoiceSelection],
+    onChange: () => {
+      log('click create to add: :', trackChoice.getValue());
+    }
   });
 
-  // eslint-disable-next-line no-unused-vars
-  const btnSyntheticAudio = createButton('+ Synthetic Audio', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'SynAudio-' + number++;
-    const msTrack = await syntheticAudio();
-    const localTrack = new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
-    manageLocalTrack({ localTrack, trackName: thisTrackName});
-  });
+  async function createTrack(trackType: LocalTrackType) {
+    const thisTrackName = trackType + '-' + number++;
+    try {
+      const trackOptions = getLocalTrackOptions(thisTrackName);
+      let localTrack: LocalAudioTrack|LocalVideoTrack;
+      switch(trackType) {
+        case 'Local Audio':
+        localTrack = await Video.createLocalAudioTrack(trackOptions);
+        break;
 
-  // eslint-disable-next-line no-unused-vars
-  const btnPreviewVideo = createButton('+ Local Video', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'camera-' + number++;
-    const trackOptions = getLocalTrackOptions(thisTrackName);
-    const localTrack = await Video.createLocalVideoTrack(trackOptions);
-    manageLocalTrack({ localTrack, trackName: thisTrackName });
-  });
+        case 'Local Video':
+        localTrack = await Video.createLocalVideoTrack(trackOptions);
+        break;
 
+        case 'Synthetic Video':
+        localTrack = new Video.LocalVideoTrack(syntheticVideo({ width: 640, height: 360, word: thisTrackName }), { logLevel: 'warn', name: thisTrackName });
+        break;
 
-  const btnSyntheticVideo = createButton('+ Synthetic Video', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'SynVideo-' + number++;
-    const msTrack = await syntheticVideo({ width: 640, height: 360, word: thisTrackName });
-    const localTrack = new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: thisTrackName });
-    manageLocalTrack({ localTrack, trackName: thisTrackName });
-  });
+        case 'Synthetic Audio':
+        localTrack = new Video.LocalAudioTrack(syntheticAudio(), { logLevel: 'warn', name: thisTrackName });
+        break;
 
-  const btnScreenShare = createButton('+ Screen Share', localTrackButtonsContainer, async () => {
-    const thisTrackName = 'screen-' + number++;
-    // @ts-ignore
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { width: 1920, height: 1080, frameRate: 15 }
-    });
-    const localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
-    manageLocalTrack({ localTrack, trackName: thisTrackName });
-  });
+        case 'Screen Share':
+        // @ts-ignore
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: trackOptions });
+        localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
+        break;
+
+        default:
+          throw new Error('invalid selection: ' + trackType);
+      };
+
+      manageLocalTrack({ localTrack, trackName: thisTrackName });
+    } catch (ex) {
+      log('Error creating track: ', ex);
+    }
+  }
+
+  createButton('Create', trackSelectionDiv, async () => createTrack(trackChoice.getValue() as LocalTrackType))
 
   // eslint-disable-next-line no-unused-vars
   const enumerateBtn = createButton('Enumerate Cameras', localTrackButtonsContainer, async () => {
@@ -153,10 +178,10 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
   });
 
   if (autoAudio) {
-    btnPreviewAudio.click();
+    createTrack('Local Audio');
   }
   if (autoVideo) {
-    btnPreviewVideo.click();
+    createTrack('Local Video');
   }
 
   return {

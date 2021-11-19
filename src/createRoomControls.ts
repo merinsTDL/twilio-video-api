@@ -59,28 +59,29 @@ const style = {
     width: '300px',
     display: 'flex',
     padding: '5px',
-    // border: 'solid black 1px',
-    'flex-direction': 'column',
-    'flex-wrap': 'wrap',
-    'background-color': '#fff',
-  },
-  moreRoomControls: {
-    display: 'flex',
-    padding: '5px',
+    // 'justify-contents': 'space-around',
     // border: 'solid black 1px',
     'flex-direction': 'column',
     'flex-wrap': 'wrap',
     'background-color': '#fff',
   },
   roomControlsInput: {
-    padding: '0.5em',
+    // padding: '0.5em',
     'text-align': 'center',
   },
-  roomControlsLabel: {
+  roomControlsRow: {
+    'width': "100%",
+    'flex-direction': 'row',
     'display': 'flex',
     'justify-content': 'center',
     'margin-top': '10px',
-    'margin-right': '10px',
+  },
+  roomControlsLabel: {
+    'flex-direction': 'column',
+    'display': 'flex',
+    'justify-content': 'center',
+    'margin-top': '10px',
+    // 'margin-right': '10px',
   },
   roomControlsButton: {
     'text-align': 'center'
@@ -103,7 +104,7 @@ const style = {
   },
   constraintsInput: {
     // width: '100%',
-    padding: '0.5em'
+    // padding: '0.5em'
   }
 }
 // Compile styles, apply plugins.
@@ -166,7 +167,7 @@ export function createRoomControls(
   ({ innerDiv: container } = createCollapsibleDiv({ container, headerText: 'Controls', divClass: sheet.classes.roomControls }));
   createElement({ container, type: 'h3', id: 'twilioVideoVersion', innerHtml: 'Twilio-Video@' + Video.version });
 
-  const selectionDiv = createDiv(container, sheet.classes.roomControlsLabel);
+  const selectionDiv = createDiv(container, sheet.classes.roomControlsRow);
   const topologySelect = createSelection({
     id: 'topology',
     container: selectionDiv,
@@ -207,25 +208,30 @@ export function createRoomControls(
     }
   });
 
+  const roomAndIdentity = createDiv(container, sheet.classes.roomControlsRow);
   const identityInput = createLabeledInput({
-    container,
-    labelText: 'Identity: ',
+    labelParent: true,
+    container: roomAndIdentity,
+    labelText: 'identity: ',
     placeHolder: 'Enter identity or random one will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
     inputClasses: [sheet.classes.roomControlsInput]
+
   });
 
   const roomNameInput = createLabeledInput({
-    container,
+    labelParent: true,
+    container : roomAndIdentity,
     labelText: 'Room: ',
     placeHolder: 'Enter room name or random name will be generated',
     labelClasses: [sheet.classes.roomControlsLabel],
     inputClasses: [sheet.classes.roomControlsInput]
+
   });
 
   //
   // TODO: besides server also allow to use token created from: 'https://www.twilio.com/console/video/project/testing-tools'
-  const labelText = createLink({ container, linkText: 'ServerUrl', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
+  const labelText = createLink({ container, linkText: 'server', linkUrl: 'https://github.com/makarandp0/twilio-video-api#usage', newTab: true });
   labelText.classList.add(sheet.classes.roomControlsLabel);
   const tokenServerUrlInput = createLabeledInput({
     container,
@@ -237,7 +243,7 @@ export function createRoomControls(
 
   const extraConnectOptions = createLabeledInput({
     container,
-    labelText: 'ConnectOptions: ',
+    labelText: 'connectOptions: ',
     placeHolder: 'connectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
     inputType: 'textarea'
@@ -247,21 +253,13 @@ export function createRoomControls(
   const controlOptionsDiv = createDiv(container, sheet.classes.controlOptions, 'control-options');
 
   // container, labelText, id
-  const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Publish', id: 'autoPublish' });
-  const autoAttach = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Auto Attach', id: 'autoAttach' });
-  const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extra Info', id: 'extraInfo' });
-  const sendLogs = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'send logs', id: 'sendLogs' });
-  const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'Record Participant', id: 'recordParticipant' });
+  const autoPublish = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'autoPublish', id: 'autoPublish' });
+  const autoAttach = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'autoAttach', id: 'autoAttach' });
+  const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extraInfo', id: 'extraInfo' });
+  const sendLogs = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'sendLogs', id: 'sendLogs' });
+  const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'record', id: 'recordParticipant' });
   const defaultLogger = Video.Logger.getLogger('twilio-video');
   const logLevelSelect = logLevelSelector({ container: controlOptionsDiv, logger: defaultLogger });
-  const trackConstraintsInput = createLabeledInput({
-    container,
-    labelText: 'Track Constraints: ',
-    placeHolder: 'Optional, ex:\n{ "frameRate": 1, "width": 120 }',
-    labelClasses: [sheet.classes.roomControlsLabel],
-    inputClasses: [sheet.classes.roomControlsInput],
-    inputType: 'textarea'
-  });
 
   // for working with dev env use:
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
@@ -287,57 +285,6 @@ export function createRoomControls(
   };
 
 
-  const controlsAndDefaults = [
-    {control: roomNameInput, urlParamName: 'room', inputType: 'editBox', defaultValue: randomRoomName()},
-    {control: identityInput, urlParamName: 'identity', inputType: 'editBox', defaultValue: randomParticipantName()},
-    {control: tokenServerUrlInput, urlParamName: 'server', inputType: 'editBox', defaultValue: 'http://localhost:3002'},
-    {control: extraConnectOptions, urlParamName: 'connectOptions', inputType: 'editBox', defaultValue: JSON.stringify(defaultOptions, null, 2)},
-    {control: autoAttach, urlParamName: 'autoAttach', inputType: 'checkBox', defaultValue: true},
-    {control: autoPublish, urlParamName: 'autoPublish', inputType: 'checkBox', defaultValue: true},
-    {control: autoRecord, urlParamName: 'record', inputType: 'checkBox', defaultValue: false},
-    {control: extraInfo, urlParamName: 'extraInfo', inputType: 'checkBox', defaultValue: false},
-    {control: sendLogs, urlParamName: 'sendLogs', inputType: 'checkBox', defaultValue: false},
-    {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
-    {control: roomCodecsSelect, urlParamName: 'roomCodecs', inputType: 'selectBox', defaultValue: 'default'},
-    {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
-    {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
-    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: ''},
-  ];
-  setDefaultValues();
-  function setDefaultValues() {
-    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
-      if ('value' in control) {
-        if (inputType === 'checkBox' && typeof defaultValue === 'boolean' ) {
-          control.checked = getBooleanUrlParam(urlParamName, defaultValue);
-        } else if (inputType === 'editBox' && typeof defaultValue === 'string' ) {
-          control.value = urlParams.get(urlParamName) || defaultValue;
-        } else {
-          console.error('Error Not processing: ', urlParamName);
-        }
-      } else if ('setValue' in control && typeof defaultValue === 'string' ) {
-        control.setValue(urlParams.get(urlParamName) || defaultValue);
-      } else {
-        console.error('Error Not processing: ', urlParamName);
-      }
-    })
-  }
-
-  function copyLinkToClipboard() {
-    const url = new URL(window.location.origin + window.location.pathname);
-    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
-      if ('value' in control) {
-        if (inputType === 'checkBox' && typeof defaultValue === 'boolean' && control.checked !== defaultValue) {
-            url.searchParams.append(urlParamName, control.checked ? 'true' : 'false');
-        } else if (inputType === 'editBox' && typeof defaultValue === 'string' && defaultValue != control.value) {
-          url.searchParams.append(urlParamName, control.value);
-        }
-      } else if ('setValue' in control && typeof defaultValue === 'string' && control.getValue() !== defaultValue ) {
-        url.searchParams.append(urlParamName, control.getValue());
-      }
-    });
-    console.log("URL:", url.toString());
-    navigator.clipboard.writeText(url.toString());
-  }
 
   async function getRoomCredentials(): Promise<{token: string, environment: string}> {
     const identity = identityInput.value || randomParticipantName(); // randomName();
@@ -424,7 +371,6 @@ export function createRoomControls(
     }
   }
 
-  createButton('copy link to clipboard', container, () => copyLinkToClipboard());
   // eslint-disable-next-line consistent-return
   const btnJoin = createButton('Join', container, async () => {
     setupLocalDescriptionOverride();
@@ -443,6 +389,69 @@ export function createRoomControls(
       log('Failed: ', ex);
     }
   });
+
+  const trackConstraintsInput = createLabeledInput({
+    container,
+    labelText: 'trackConstraints: ',
+    placeHolder: 'Optional, ex:\n{ "frameRate": 1, "width": 120 }',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputClasses: [sheet.classes.roomControlsInput],
+    inputType: 'textarea'
+  });
+
+  const controlsAndDefaults = [
+    {control: roomNameInput, urlParamName: 'room', inputType: 'editBox', defaultValue: randomRoomName()},
+    {control: identityInput, urlParamName: 'identity', inputType: 'editBox', defaultValue: randomParticipantName()},
+    {control: tokenServerUrlInput, urlParamName: 'server', inputType: 'editBox', defaultValue: 'http://localhost:3002'},
+    {control: extraConnectOptions, urlParamName: 'connectOptions', inputType: 'editBox', defaultValue: JSON.stringify(defaultOptions, null, 2)},
+    {control: autoAttach, urlParamName: 'autoAttach', inputType: 'checkBox', defaultValue: true},
+    {control: autoPublish, urlParamName: 'autoPublish', inputType: 'checkBox', defaultValue: true},
+    {control: autoRecord, urlParamName: 'record', inputType: 'checkBox', defaultValue: false},
+    {control: extraInfo, urlParamName: 'extraInfo', inputType: 'checkBox', defaultValue: false},
+    {control: sendLogs, urlParamName: 'sendLogs', inputType: 'checkBox', defaultValue: false},
+    {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
+    {control: roomCodecsSelect, urlParamName: 'roomCodecs', inputType: 'selectBox', defaultValue: 'default'},
+    {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
+    {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
+    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: ''},
+  ];
+  setDefaultValues();
+  function setDefaultValues() {
+    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
+      if ('value' in control) {
+        if (inputType === 'checkBox' && typeof defaultValue === 'boolean' ) {
+          control.checked = getBooleanUrlParam(urlParamName, defaultValue);
+        } else if (inputType === 'editBox' && typeof defaultValue === 'string' ) {
+          control.value = urlParams.get(urlParamName) || defaultValue;
+        } else {
+          console.error('Error Not processing: ', urlParamName);
+        }
+      } else if ('setValue' in control && typeof defaultValue === 'string' ) {
+        control.setValue(urlParams.get(urlParamName) || defaultValue);
+      } else {
+        console.error('Error Not processing: ', urlParamName);
+      }
+    })
+  }
+
+  createButton('copy link to clipboard', container, () => {
+    const url = new URL(window.location.origin + window.location.pathname);
+    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
+      if ('value' in control) {
+        if (inputType === 'checkBox' && typeof defaultValue === 'boolean' && control.checked !== defaultValue) {
+            url.searchParams.append(urlParamName, control.checked ? 'true' : 'false');
+        } else if (inputType === 'editBox' && typeof defaultValue === 'string' && defaultValue != control.value) {
+          url.searchParams.append(urlParamName, control.value);
+        }
+      } else if ('setValue' in control && typeof defaultValue === 'string' && control.getValue() !== defaultValue ) {
+        url.searchParams.append(urlParamName, control.getValue());
+      }
+    });
+    console.log("URL:", url.toString());
+    navigator.clipboard.writeText(url.toString());
+  });
+
+
   btnJoin.btn.classList.add(sheet.classes.joinRoomButton);
 
   if (urlParams.has('autoJoin')) {

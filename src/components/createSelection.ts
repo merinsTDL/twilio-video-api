@@ -1,16 +1,19 @@
 
-export function createSelection({ id, container, options = ['dog', 'cat', 'parrot', 'rabbit'], title = 'Pets', labelClasses = [], onChange = () => { } }: {
+export function createSelection({ id, container, options = ['dog', 'cat', 'parrot', 'rabbit'], title = 'Pets', selectClasses = [], labelClasses = [], onChange = () => { } }: {
   id?: string,
   container: HTMLElement,
   options: string[],
   title: string,
   labelClasses?: string[],
+  selectClasses?: string[],
   onChange: () => void;
 }) {
   const select = document.createElement('select');
   if (id) {
     select.id = id;
   }
+
+  select.classList.add(...selectClasses);
 
   for (const val of options) {
     const option = document.createElement('option');

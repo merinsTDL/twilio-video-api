@@ -5,10 +5,12 @@ export function createLabeledCheckbox({ container, labelText, id } : {
   labelText: string,
   id: string,
 }): HTMLInputElement {
-  const checkbox = createElement({ container, type: 'input', id }) as HTMLInputElement;
-  checkbox.setAttribute('type', 'checkbox');
 
   const label = createElement({ container, type: 'label', innerHtml: labelText});
   label.setAttribute('for', id);
+
+  const checkbox = createElement({ container: label, type: 'input', id }) as HTMLInputElement;
+  checkbox.setAttribute('type', 'checkbox');
+
   return checkbox;
 }
