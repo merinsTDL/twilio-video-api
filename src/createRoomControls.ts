@@ -284,8 +284,6 @@ export function createRoomControls(
     }
   };
 
-
-
   async function getRoomCredentials(): Promise<{token: string, environment: string}> {
     const identity = identityInput.value || randomParticipantName(); // randomName();
     let tokenServerUrl = tokenServerUrlInput.value;
@@ -413,7 +411,7 @@ export function createRoomControls(
     {control: roomCodecsSelect, urlParamName: 'roomCodecs', inputType: 'selectBox', defaultValue: 'default'},
     {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
     {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
-    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: ''},
+    {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720 }'},
   ];
   setDefaultValues();
   function setDefaultValues() {

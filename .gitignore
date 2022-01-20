@@ -1,8 +1,4 @@
 node_modules/
 local_only/
-server/twilio_credentials.json
-server/twilio_credentials.json.reactapp
-server/twilio_credentials.json.ss
-server/twilio_credentials.json.video_javascript
-server/twilio_credentials.json.backup
+server/twilio_credentials*
 .DS_Store

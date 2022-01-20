@@ -107,6 +107,14 @@ async function renderExtraRoomInformation({ room, container, restCreds }:
     navigator.clipboard.writeText(command);
   });
 
+  createButton('copy Complete Room', container, () => {
+    const command = `curl -X POST '${baseUrl}/v1/Rooms/${room.sid}' \
+    -u '${restCreds.signingKeySid}:${restCreds.signingKeySecret}' \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'Status=completed'`;
+    navigator.clipboard.writeText(command);
+    // completeRoom
+  });
 
   createLink({ container, linkText: `/v1/Rooms/${room.sid}`, linkUrl: `${baseUrl}/v1/Rooms/${room.sid}`, newTab: true });
 
@@ -151,6 +159,17 @@ export async function renderRoomDetails({ room, container, restCreds, logger }: 
   if (restCreds !== null) {
     renderExtraRoomInformation({ room, container, restCreds });
   }
+  createButton('open monitor', container, () => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@twilio/video-room-monitor/dist/browser/twilio-video-room-monitor.js';
+    script.onload = () => {
+      // @ts-ignore
+      const monitor = window.Twilio.VideoRoomMonitor;
+      monitor.registerVideoRoom(room);
+      monitor.openMonitor();
+    };
+    document.body.appendChild(script);
+  });
 
   // createLabeledStat({ container, label: 'room.sid' }).setText(room.sid);
   createLabeledStat({ container, label: 'localParticipant.sid' }).setText(room.localParticipant.sid);
