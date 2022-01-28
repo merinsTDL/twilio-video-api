@@ -42,7 +42,7 @@ function createAccessToken({ environment = 'prod', identity, roomName }) {
   return accessTokenGenerator.toJwt();
 }
 
-async function createRoom({ environment = 'prod', topology, roomName, recordParticipantsOnConnect, maxParticipants, videoCodecs }) {
+async function createRoom({ environment = 'prod', topology, roomName, extraRoomOptions }) {
   const { accountSid, signingKeySid, signingKeySecret } = getCredentials(environment);
   console.log('Using account: ', accountSid);
   const { video } = twilio(signingKeySid, signingKeySecret, {
@@ -50,18 +50,27 @@ async function createRoom({ environment = 'prod', topology, roomName, recordPart
     region: environment === 'prod' ? null : environment
   });
 
-  console.log('videoCodecs = ', videoCodecs);
-  if (videoCodecs)  {
-    videoCodecs = JSON.parse(videoCodecs);
-  }
-  const createRoomOptions = { type: topology, uniqueName: roomName, recordParticipantsOnConnect, maxParticipants, videoCodecs };
-  if (!maxParticipants) {
-    delete createRoomOptions.maxParticipants;
+  console.log('extraRoomOptions = ', extraRoomOptions);
+  if (extraRoomOptions)  {
+    extraRoomOptions = JSON.parse(extraRoomOptions);
   }
 
-  if (!videoCodecs) {
-    delete createRoomOptions.videoCodecs;
-  }
+  const createRoomOptions = {
+    type: topology,
+    uniqueName: roomName,
+    ...extraRoomOptions
+  };
+  // if (!maxParticipants) {
+  //   delete createRoomOptions.maxParticipants;
+  // }
+
+  // if (!videoCodecs) {
+  //   delete createRoomOptions.videoCodecs;
+  // }
+
+  // if (!mediaRegion) {
+  //   delete createRoomOptions.mediaRegion;
+  // }
 
   console.log('createRoomOptions: ', createRoomOptions);
   const result = await video.rooms.create(createRoomOptions).catch(error => {
@@ -99,11 +108,12 @@ app.get('/getCreds', function(request, response) {
 });
 
 app.get('/token', async function(request, response, next) {
-  const { identity = randomName(), environment = 'prod', topology, roomName, recordParticipantsOnConnect, maxParticipants, videoCodecs } = request.query;
+  console.log("request.query:", request.query);
+  const { identity = randomName(), environment = 'prod', topology, roomName, extraRoomOptions } = request.query;
   if (topology) {
     // topology was specified, have to create room
     try {
-      const result = await createRoom({ environment, roomName, topology, recordParticipantsOnConnect, maxParticipants, videoCodecs });
+      const result = await createRoom({ environment, roomName, topology, extraRoomOptions });
 
       response.set('Content-Type', 'application/json');
 
@@ -129,8 +139,8 @@ app.get('/token', async function(request, response, next) {
 // creates a room and a token for it.
 app.get('/getOrCreateRoom', async function(request, response, next) {
   try {
-    const { roomName, topology, environment, recordParticipantsOnConnect, maxParticipants } = request.query;
-    const result = await createRoom({ environment, roomName, topology, recordParticipantsOnConnect, maxParticipants });
+    const { roomName, topology, environment, extraRoomOptions } = request.query;
+    const result = await createRoom({ environment, roomName, topology, extraRoomOptions });
     response.set('Content-Type', 'application/json');
     result.token = createAccessToken({ environment, roomName, topology });
     response.send(result);

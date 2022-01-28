@@ -15,6 +15,7 @@ import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { getRestCreds, REST_CREDENTIALS } from './getCreds';
 import { logLevelSelector } from './logutils';
+// import clipBoardImage  from '../assets/clipboard.jpeg';
 
 /*
 You can override any of the SDP function by specifying a console override like a one below before connecting to the room:
@@ -73,7 +74,7 @@ const style = {
     'width': "100%",
     'flex-direction': 'row',
     'display': 'flex',
-    'justify-content': 'center',
+    'justify-content': 'space-around',
     'margin-top': '10px',
   },
   roomControlsLabel: {
@@ -171,22 +172,11 @@ export function createRoomControls(
   const topologySelect = createSelection({
     id: 'topology',
     container: selectionDiv,
-    options: ['group-small', 'peer-to-peer', 'group', 'go', 'large-room'],
+    options: ['group-small', 'peer-to-peer', 'group', 'go'],
     title: 'topology: ',
     labelClasses: [],
     onChange: () => {
       log('topology change:', topologySelect.getValue());
-    }
-  });
-
-  const roomCodecsSelect = createSelection({
-    id: 'roomCodecs',
-    container: selectionDiv,
-    options: ['default', 'VP8', 'H264', 'H264,VP8', 'VP8,H264'],
-    title: ' roomCodecs: ',
-    labelClasses: [],
-    onChange: () => {
-      log('codec change:', roomCodecsSelect.getValue());
     }
   });
 
@@ -201,8 +191,8 @@ export function createRoomControls(
       const newEnv = envSelect.getValue();
       if (newEnv === 'dev') {
         // eslint-disable-next-line no-use-before-define
-        const devOptions = Object.assign({}, defaultOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
-        extraConnectOptions.value = urlParams.get('connectOptions') || JSON.stringify(devOptions, null, 2);
+        const devOptions = Object.assign({}, defaultExtraConnectOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
+        extraConnectOptionsControl.value = urlParams.get('extraConnectOptions') || JSON.stringify(devOptions, null, 2);
       }
       log('env change:', newEnv);
     }
@@ -241,10 +231,18 @@ export function createRoomControls(
     inputClasses: [sheet.classes.roomControlsInput]
   });
 
-  const extraConnectOptions = createLabeledInput({
+  const extraRoomOptionsControl = createLabeledInput({
     container,
-    labelText: 'connectOptions: ',
-    placeHolder: 'connectOptions as json here',
+    labelText: 'extraRoomOptions: ',
+    placeHolder: 'extraRoomOptions as json here',
+    labelClasses: [sheet.classes.roomControlsLabel],
+    inputType: 'textarea'
+  });
+
+  const extraConnectOptionsControl = createLabeledInput({
+    container,
+    labelText: 'extraConnectOptions: ',
+    placeHolder: 'extraConnectOptions as json here',
     labelClasses: [sheet.classes.roomControlsLabel],
     inputType: 'textarea'
   });
@@ -257,7 +255,7 @@ export function createRoomControls(
   const autoAttach = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'autoAttach', id: 'autoAttach' });
   const extraInfo = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'extraInfo', id: 'extraInfo' });
   const sendLogs = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'sendLogs', id: 'sendLogs' });
-  const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'record', id: 'recordParticipant' });
+  // const autoRecord = createLabeledCheckbox({ container: controlOptionsDiv, labelText: 'record', id: 'recordParticipant' });
   const defaultLogger = Video.Logger.getLogger('twilio-video');
   const logLevelSelect = logLevelSelector({ container: controlOptionsDiv, logger: defaultLogger });
 
@@ -270,7 +268,8 @@ export function createRoomControls(
   //   "preferredVideoCodecs": [{"codec":"H264"}],
   //   "iceTransportPolicy" : "relay"
   // };
-  const defaultOptions = {
+  // goes into extraConnectOptionsControl
+  const defaultExtraConnectOptions = {
     networkQuality: { local: 1, remote: 0 },
     dominantSpeaker: true,
     preferredVideoCodecs: 'auto',
@@ -284,32 +283,58 @@ export function createRoomControls(
     }
   };
 
-  async function getRoomCredentials(): Promise<{token: string, environment: string}> {
+  // goes into extraRoomOptionsControl
+  const defaultExtraRoomOptions = {
+    recordParticipantsOnConnect: false,
+    mediaRegion: "default", // you can specify something like: "us2",
+    maxParticipants: "default", // large-room is created when participants are 51+
+    videoCodecs: "default" // you can specify something like: ["H264"] or ["H264", "VP8"]
+  };
+
+
+  function getRoomOptions() {
     const identity = identityInput.value || randomParticipantName(); // randomName();
-    let tokenServerUrl = tokenServerUrlInput.value;
     const environment = envSelect.getValue();
     const roomName = roomNameInput.value;
-    const recordParticipantsOnConnect = autoRecord.checked ? 'true': 'false';
-
-    let url = new URL(tokenServerUrl + '/token');
-    let maxParticipants = urlParams.get('maxParticipants') || '';
     let topology = topologySelect.getValue();
-    if (topology === 'large-room') {
-      maxParticipants = maxParticipants || "51"; // large-room is created when participants are 51+
-      topology = 'group';
+
+    let extraRoomOptions = {};
+    if (extraRoomOptionsControl.value !== '') {
+      try {
+        extraRoomOptions = JSON.parse(extraRoomOptionsControl.value);
+      } catch (e) {
+        console.warn('failed to parse room options.', e);
+        // return;
+      }
     }
 
-    let roomCodecs = roomCodecsSelect.getValue();
-    let videoCodecs = roomCodecs === 'default' ? '' : JSON.stringify(roomCodecs.split(','));
+    console.log('before: ', JSON.stringify(extraRoomOptions));
+    Object.keys(extraRoomOptions).forEach(key => {
+      // @ts-ignore
+      if (extraRoomOptions[key] === "default") {
+        // @ts-ignore
+        delete extraRoomOptions[key];
+      }
+    });
+    console.log('after: ', JSON.stringify(extraRoomOptions));
 
-    const tokenOptions = { environment, topology, roomName, identity, recordParticipantsOnConnect, maxParticipants, videoCodecs };
+    return {
+      environment, topology, roomName, identity,
+      extraRoomOptions: JSON.stringify(extraRoomOptions)
+    };
+  }
+
+  async function getRoomCredentials(): Promise<{token: string, environment: string}> {
+    const tokenOptions = getRoomOptions();
+    let tokenServerUrl = tokenServerUrlInput.value;
+    let url = new URL(tokenServerUrl + '/token');
     console.log('Getting Token For: ', tokenOptions);
     url.search = (new URLSearchParams(tokenOptions)).toString();
     try {
       const response = await fetch(url.toString());
       if (response.ok) {
         const tokenResponse = await response.json();
-        return { token: tokenResponse.token,  environment };
+        return { token: tokenResponse.token,  environment: tokenOptions.environment };
       }
       throw new Error(`Failed to obtain token from ${url}, Status: ${response.status}`);
     } catch (ex) {
@@ -325,16 +350,15 @@ export function createRoomControls(
       return;
     }
 
-    let additionalConnectOptions = {};
-    if (extraConnectOptions.value !== '') {
+    let extraConnectOptions = {};
+    if (extraConnectOptionsControl.value !== '') {
       try {
-        additionalConnectOptions = JSON.parse(extraConnectOptions.value);
+        extraConnectOptions = JSON.parse(extraConnectOptionsControl.value);
       } catch (e) {
         console.warn('failed to parse additional connect options.', e);
         return;
       }
     }
-
 
     // Local track logs are always connected on twilio-video logger
     // so use the same logger when we want to send logs.
@@ -345,12 +369,13 @@ export function createRoomControls(
     const publishLogsAsData = sendLogs.checked;
 
     const logProcessor = handleSDKLogs(logger);
-    const connectOptions = Object.assign({
+    const connectOptions = {
       loggerName,
       tracks: autoPublish.checked ? localTracks : [],
       name: roomName,
-      environment: envSelect.getValue()
-    }, additionalConnectOptions);
+      environment: envSelect.getValue(),
+      ...extraConnectOptions
+    };
     // Join the Room with the token from the server and the
     // LocalParticipant's Tracks.
     log(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
@@ -401,14 +426,13 @@ export function createRoomControls(
     {control: roomNameInput, urlParamName: 'room', inputType: 'editBox', defaultValue: randomRoomName()},
     {control: identityInput, urlParamName: 'identity', inputType: 'editBox', defaultValue: randomParticipantName()},
     {control: tokenServerUrlInput, urlParamName: 'server', inputType: 'editBox', defaultValue: 'http://localhost:3002'},
-    {control: extraConnectOptions, urlParamName: 'connectOptions', inputType: 'editBox', defaultValue: JSON.stringify(defaultOptions, null, 2)},
+    {control: extraConnectOptionsControl, urlParamName: 'extraConnectOptions', inputType: 'editBox', defaultValue: JSON.stringify(defaultExtraConnectOptions, null, 2)},
+    {control: extraRoomOptionsControl, urlParamName: 'extraRoomOptions', inputType: 'editBox', defaultValue: JSON.stringify(defaultExtraRoomOptions, null, 2)},
     {control: autoAttach, urlParamName: 'autoAttach', inputType: 'checkBox', defaultValue: true},
     {control: autoPublish, urlParamName: 'autoPublish', inputType: 'checkBox', defaultValue: true},
-    {control: autoRecord, urlParamName: 'record', inputType: 'checkBox', defaultValue: false},
     {control: extraInfo, urlParamName: 'extraInfo', inputType: 'checkBox', defaultValue: false},
     {control: sendLogs, urlParamName: 'sendLogs', inputType: 'checkBox', defaultValue: false},
     {control: topologySelect, urlParamName: 'topology', inputType: 'selectBox', defaultValue: 'group-small'},
-    {control: roomCodecsSelect, urlParamName: 'roomCodecs', inputType: 'selectBox', defaultValue: 'default'},
     {control: envSelect, urlParamName: 'env', inputType: 'selectBox', defaultValue: 'prod'},
     {control: logLevelSelect, urlParamName: 'logLevel', inputType: 'selectBox', defaultValue: 'DEBUG'},
     {control: trackConstraintsInput, urlParamName: 'trackConstraints', inputType: 'editBox', defaultValue: '{ "width": 1280, "height": 720 }'},
@@ -432,7 +456,7 @@ export function createRoomControls(
     })
   }
 
-  createButton('copy link to clipboard', container, () => {
+  const clipboardBtn = createButton('copy link to clipboard', container, () => {
     const url = new URL(window.location.origin + window.location.pathname);
     controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
       if ('value' in control) {
@@ -448,6 +472,9 @@ export function createRoomControls(
     console.log("URL:", url.toString());
     navigator.clipboard.writeText(url.toString());
   });
+  // const myIcon = new Image();
+  // myIcon.src = clipBoardImage;
+  // clipboardBtn.btn.appendChild(myIcon);
 
 
   btnJoin.btn.classList.add(sheet.classes.joinRoomButton);

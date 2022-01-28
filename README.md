@@ -63,11 +63,10 @@ app supports various url parameters
 | extraInfo       | if specified app renders links to room properties      |  `false`  |
 | sendLogs        | if specified app sends console logs over data channel. Useful for testing mobile->desktop | `false` |
 | logLevel        | if specified used as default log level | `WARN` |
-| maxParticipants | if 51 or larger then large group room is created  | 51 if `topology === large-room`  |
+| extraRoomOptions| specify json for extra room options like maxParticipants, videoCodecs, mediaRegion etc.  |   |
 | topology        | type of room to use  |  `group-small`  |
 | env             | backend environment to use  |  `prod`  |
-| roomCodecs      | create room with specific codec support  |  none  |
-| connectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
+| extraConnectOptions  | additional connect options to use  | `{"networkQuality":true}`   |
 | server          | server to use to acquire token to join video room |  `http://localhost:3000`  |
 | trackConstraints| constraints to use when creating a track |  ``  |
 
