@@ -15,6 +15,8 @@ import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { getRestCreds, REST_CREDENTIALS } from './getCreds';
 import { logLevelSelector } from './logutils';
+
+// @ts-ignore
 // import clipBoardImage  from '../assets/clipboard.jpeg';
 
 /*
@@ -106,7 +108,12 @@ const style = {
   constraintsInput: {
     // width: '100%',
     // padding: '0.5em'
-  }
+  },
+  // imageBackground: {
+  //   backgroundImage: "url(" + clipBoardImage + ")",
+  //   'background-size': 'contain',
+  //   'background-repeat': 'no-repeat',
+  // }
 }
 // Compile styles, apply plugins.
 const sheet = jss.createStyleSheet(style)
@@ -472,12 +479,10 @@ export function createRoomControls(
     console.log("URL:", url.toString());
     navigator.clipboard.writeText(url.toString());
   });
-  // const myIcon = new Image();
-  // myIcon.src = clipBoardImage;
-  // clipboardBtn.btn.appendChild(myIcon);
 
-
+  // clipboardBtn.btn.classList.add(sheet.classes.imageBackground);
   btnJoin.btn.classList.add(sheet.classes.joinRoomButton);
+
 
   if (urlParams.has('autoJoin')) {
     btnJoin.click();
