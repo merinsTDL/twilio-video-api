@@ -15,46 +15,10 @@ import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { getRestCreds, REST_CREDENTIALS } from './getCreds';
 import { logLevelSelector } from './logutils';
+import { setupLocalDescriptionOverride } from './setupLocalDescriptionOverride';
 
 // @ts-ignore
 // import clipBoardImage  from '../assets/clipboard.jpeg';
-
-/*
-You can override any of the SDP function by specifying a console override like a one below before connecting to the room:
-window.sdpTransform = function (override, description, pc) {
-  console.log(`overriding ${override} for ${description.type}  of length ${description.sdp.length} in peerConnection:`,  pc );
-  return description;
-}
-*/
-
-let overridesSet = false;
-function setupLocalDescriptionOverride() {
-  // @ts-ignore
-  const transform = window.sdpTransform;
-  if (!overridesSet && typeof transform === 'function') {
-    overridesSet = true;
-    const origSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
-    const origSetRemoteDescription = RTCPeerConnection.prototype.setRemoteDescription;
-    const origCreateOffer = RTCPeerConnection.prototype.createOffer;
-    const origCreateAnswer = RTCPeerConnection.prototype.createAnswer;
-    RTCPeerConnection.prototype.setLocalDescription = function setLocalDescription(description) {
-      return origSetLocalDescription.call(this, transform('setLocalDescription', description, this));
-    };
-    RTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescription(description) {
-      return origSetRemoteDescription.call(this, transform('setRemoteDescription', description, this));
-    };
-    RTCPeerConnection.prototype.createOffer = function createOffer(options) {
-      return origCreateOffer.call(this, options).then((offer: RTCSessionDescription) => {
-        return transform('createOffer', offer, this);
-      });
-    };
-    RTCPeerConnection.prototype.createAnswer = function createAnswer(options) {
-      return origCreateAnswer.call(this, options).then((answer: RTCSessionDescription) => {
-        return transform('createAnswer', answer, this);
-      });
-    };
-  }
-}
 
 // Create your style.
 const style = {
@@ -198,8 +162,17 @@ export function createRoomControls(
       const newEnv = envSelect.getValue();
       if (newEnv === 'dev') {
         // eslint-disable-next-line no-use-before-define
-        const devOptions = Object.assign({}, defaultExtraConnectOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
+        // for dev2: wss://umatilla.vss.dev.twilio.com/signaling
+        // const devOptions = Object.assign({}, defaultExtraConnectOptions, { wsServer: 'wss://us2.vss.dev.twilio.com/signaling' });
+        const devOptions = {
+          ...defaultExtraConnectOptions,
+          wsServer: 'wss://us2.vss.dev.twilio.com/signaling'
+        }
         extraConnectOptionsControl.value = urlParams.get('extraConnectOptions') || JSON.stringify(devOptions, null, 2);
+      } else {
+        const oldExtraConnectOptions = JSON.parse(extraConnectOptionsControl.value);
+        delete oldExtraConnectOptions.wsServer;
+        extraConnectOptionsControl.value = urlParams.get('extraConnectOptions') || JSON.stringify(oldExtraConnectOptions, null, 2);
       }
       log('env change:', newEnv);
     }
