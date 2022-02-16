@@ -3,26 +3,31 @@ import { createDiv } from './createDiv';
 
 import jss from '../jss'
 
-// Create your style.
 const style = {
-  roomHeaderDiv: {
-    all: 'flex'
+  innerDiv_off: {
+    'max-height': 0,
+    'max-width': 0,
+    transition: 'all 200ms ease-in-out',
+    overflow: 'hidden',
   },
-  displayContents: {
-    display: 'contents'
+  innerDiv_on: {
+    'max-height': '1500px',
+    transition: 'all 200ms ease-in-out',
+    padding: 0,
   },
   legendStyle: {
+    'white-space': 'nowrap',
     overflow: 'hidden',
     'text-align': 'left',
     'background-color': 'darkslategray',
     color: 'white',
     padding: "3px 6px"
   },
-  nonCollapsedStyle: {
-    // border: 'none',
+  outerDiv_on: {
     padding: 0,
   },
-  collapsedStyle: {
+  outerDiv_off: {
+    width:0,
     border: 'none',
     padding: 0,
   }
@@ -30,73 +35,6 @@ const style = {
 // Compile styles, apply plugins.
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
-
-export function createCollapsibleDiv_1({ container, headerText, divClass } : {
-  container: HTMLElement,
-  headerText: string,
-  divClass: string[] | string
-}) : { innerDiv: HTMLDivElement, outerDiv: HTMLDivElement } {
-  const collapsibleDiv = createDiv(container, ['collapsible']);
-  const headerDiv = createDiv(collapsibleDiv, sheet.classes.roomHeaderDiv);
-  const innerDiv = createDiv(collapsibleDiv, divClass);
-  let display = 'none';
-  const showHideButton = createButton(`- ${headerText}`, headerDiv, () => {
-    if (innerDiv.style.display === 'none') {
-      innerDiv.style.display = display;
-      showHideButton.text(`- ${headerText}`);
-    } else {
-      display = innerDiv.style.display;
-      innerDiv.style.display = 'none';
-      showHideButton.text(`+ ${headerText}`);
-    }
-  });
-  return {
-    innerDiv,
-    outerDiv: collapsibleDiv
-  };
-}
-
-export function createCollapsibleDiv_2({ container, headerText, divClass, startHidden = false } : {
-  container: HTMLElement,
-  headerText: string,
-  divClass: string[] | string,
-  startHidden?: boolean
-}) : { innerDiv: HTMLDivElement, outerDiv: HTMLFieldSetElement } {
-
-  // NOTE: on safari - if the fieldset is styled with display:flex, the legend onClick does not work.
-  // we need to remove the display flex from the
-  const divClasses = Array.isArray(divClass) ? [...divClass, sheet.classes.nonCollapsedStyle] : [divClass, sheet.classes.nonCollapsedStyle];
-  const { fieldset: collapsibleDiv, legend } = createFieldSet({ container, headerText, divClasses, legendClasses: [sheet.classes.legendStyle]});
-
-
-  let innerDivDisplayStyle = 'none';
-  legend.addEventListener('click', () => {
-    console.log('makarand: click');
-    if (innerDiv.style.display === 'none') {
-      // show
-      innerDiv.style.display = innerDivDisplayStyle;
-      collapsibleDiv.classList.remove(sheet.classes.collapsedStyle);
-      collapsibleDiv.classList.add(...divClasses);
-
-    } else {
-      // hide
-      innerDivDisplayStyle = innerDiv.style.display;
-      innerDiv.style.display = 'none';
-      collapsibleDiv.classList.remove(...divClasses);
-      collapsibleDiv.classList.add(sheet.classes.collapsedStyle);
-    }
-  })
-  const innerDiv = createDiv(collapsibleDiv, [sheet.classes.displayContents]);
-  innerDivDisplayStyle = innerDiv.style.display;
-  if (startHidden) {
-    legend.click();
-  }
-  return {
-    innerDiv,
-    outerDiv: collapsibleDiv
-  };
-}
-
 
 export function createCollapsibleDiv({ container, headerText, divClass, startHidden = false } : {
   container: HTMLElement,
@@ -107,32 +45,36 @@ export function createCollapsibleDiv({ container, headerText, divClass, startHid
 
   // NOTE: on safari - if the fieldset is styled with display:flex, the legend onClick does not work.
   // we need to remove the display flex from the
-  const divClasses = Array.isArray(divClass) ? [...divClass] : [divClass, sheet.classes.nonCollapsedStyle];
-  const { fieldset: collapsibleDiv, legend } = createFieldSet({ container, headerText: `- ${headerText}`, divClasses:[sheet.classes.nonCollapsedStyle], legendClasses: [sheet.classes.legendStyle]});
-
-
-  let innerDivDisplayStyle = 'none';
-  legend.addEventListener('click', () => {
-    if (innerDiv.style.display === 'none') {
-      // show
-      innerDiv.style.display = innerDivDisplayStyle;
-      collapsibleDiv.classList.remove(sheet.classes.collapsedStyle);
-      collapsibleDiv.classList.add(sheet.classes.nonCollapsedStyle);
-      legend.innerHTML = `- ${headerText}`;
-    } else {
-      // hide
-      innerDivDisplayStyle = innerDiv.style.display;
-      innerDiv.style.display = 'none';
-      collapsibleDiv.classList.remove(sheet.classes.nonCollapsedStyle);
-      collapsibleDiv.classList.add(sheet.classes.collapsedStyle);
-      legend.innerHTML = `+ ${headerText}`;
-    }
-  })
+  const { fieldset: collapsibleDiv, legend } = createFieldSet({ container, headerText: `- ${headerText}`, divClasses:[sheet.classes.outerDiv_on], legendClasses: [sheet.classes.legendStyle]});
+  const divClasses = Array.isArray(divClass) ? [...divClass] : [divClass];
+  divClasses.push(sheet.classes.innerDiv_on);
   const innerDiv = createDiv(collapsibleDiv, divClasses);
-  innerDivDisplayStyle = innerDiv.style.display;
+
+  let originalInnerDisplayStyle = innerDiv.style.display;
+  legend.addEventListener('click', () => {
+    const wasVisible = innerDiv.classList.contains(sheet.classes.innerDiv_on);
+    legend.innerHTML = `${wasVisible ? '+' : '-'} ${headerText}`;
+    innerDiv.classList.toggle(sheet.classes.innerDiv_on);
+    innerDiv.classList.toggle(sheet.classes.innerDiv_off);
+    collapsibleDiv.classList.toggle(sheet.classes.outerDiv_off);
+    collapsibleDiv.classList.toggle(sheet.classes.outerDiv_on);
+    // if (!wasVisible) {
+    //   innerDiv.style.display = originalInnerDisplayStyle;
+    // }
+    innerDiv.addEventListener('animationend', () => {
+      // if (wasVisible) {
+      //   innerDiv.style.display = "none";
+      // }
+    });
+
+    // display cannot be set in css, because original css may overwrite it.
+    // innerDiv.style.display = wasVisible ? 'none' : originalInnerDisplayStyle;
+  });
+
   if (startHidden) {
-    legend.click();
+    setTimeout(() => legend.click());
   }
+
   return {
     innerDiv,
     outerDiv: collapsibleDiv

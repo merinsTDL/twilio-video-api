@@ -106,7 +106,7 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
     room.on('disconnected', (_, err) => {
       log(`Left ${room.sid} as "${room.localParticipant.identity}"`);
       if (err) {
-        log('Error:', err);
+        log('ErrorCode:', err.code, err);
       }
       const index = rooms.indexOf(room);
       if (index > -1) {

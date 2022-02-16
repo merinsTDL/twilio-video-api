@@ -356,6 +356,11 @@ export function createRoomControls(
       environment: envSelect.getValue(),
       ...extraConnectOptions
     };
+    // @ts-ignore
+    if (connectOptions.video || connectOptions.audio) {
+      // @ts-ignore
+      delete connectOptions.tracks;
+    }
     // Join the Room with the token from the server and the
     // LocalParticipant's Tracks.
     log(`Joining room ${roomName} with ${JSON.stringify(connectOptions, null, 2)} ${autoPublish.checked ? 'with' : 'without'} ${localTracks.length} localTracks`);
