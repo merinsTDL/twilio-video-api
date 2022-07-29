@@ -103,10 +103,10 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
 
   const trackSelectionDiv = createDiv(localTrackButtonsContainer, sheet.classes.roomControlsRow);
 
-  type LocalTrackType = 'Local Video' | 'Local Audio' | 'Synthetic Video' | 'Synthetic Audio' | 'Screen Share';
+  type LocalTrackType = 'Local Video' | 'Local Audio' | 'Krisp Audio' | 'Rnnoise Audio' | 'Synthetic Video' | 'Synthetic Audio' | 'Screen Share';
   const trackChoice = createSelection({
     container: trackSelectionDiv,
-    options: ['Local Video', 'Local Audio', 'Synthetic Video', 'Synthetic Audio', 'Screen Share'],
+    options: ['Krisp Audio', 'Rnnoise Audio', 'Local Video', 'Local Audio', 'Synthetic Video', 'Synthetic Audio', 'Screen Share'],
     title: '',
     labelClasses: [],
     selectClasses: [sheet.classes.trackChoiceSelection],
@@ -135,6 +135,26 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
 
         case 'Synthetic Audio':
         localTrack = new Video.LocalAudioTrack(syntheticAudio(), { logLevel: 'warn', name: thisTrackName });
+        break;
+
+        case 'Krisp Audio':
+        localTrack = await Video.createLocalAudioTrack({
+          logLevel: 'warn',
+          name: thisTrackName,
+          noiseCancellationOptions: {
+            vendor: 'krisp',
+            sdkAssetsPath: '/krisp-audio-plugin/dist'
+        }});
+        break;
+
+        case 'Rnnoise Audio':
+        localTrack = await Video.createLocalAudioTrack({
+          logLevel: 'warn',
+          name: thisTrackName,
+          noiseCancellationOptions: {
+            vendor: 'rnnoise',
+            sdkAssetsPath: '/rnnoise'
+        }});
         break;
 
         case 'Screen Share':

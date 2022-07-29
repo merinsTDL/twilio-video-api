@@ -10,7 +10,7 @@ import { Room, LocalAudioTrack, LocalVideoTrack, Track, LocalTrackPublication, L
 import jss from './jss'
 import { createCollapsibleDiv } from './components/createCollapsibleDiv';
 import { renderLocalTrackStats } from './renderLocalTrackStats';
-const round = (num: number) => Math.round((num + Number.EPSILON) * 10) / 10;
+
 // Create your style.
 const style = {
   background_gray: {
@@ -163,7 +163,7 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
 
   createButton('restart', localTrackControls, () => {
     track.restart().catch((err: Error) => {
-      console.log('track.restart failed', err);
+      console.error('track.restart failed', err);
     });
   });
 
@@ -173,7 +173,7 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
         width: 200,
         height: 200
       }).catch((err: Error) => {
-        console.log('track.restart failed', err);
+        console.error('track.restart failed', err);
       });
     });
 
@@ -185,6 +185,17 @@ export function renderLocalTrack({ rooms, track, container, autoAttach, autoPubl
         console.log('track.restart failed', err);
       });
     });
+  } else {
+    const noiseCancellation = track.noiseCancellation;
+    if (noiseCancellation) {
+      createButton(`Enable ${noiseCancellation.vendor}`, localTrackControls, () => {
+        noiseCancellation.enable();
+      });
+
+      createButton(`Disable ${noiseCancellation.vendor}`, localTrackControls, () => {
+        noiseCancellation.disable();
+      });
+    }
   }
 
 

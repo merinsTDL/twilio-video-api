@@ -80,15 +80,26 @@ export function waveform({ width = 200, height = 150, mediaStream }: { mediaStre
     canvasCtx.stroke();
   }
 
-  audioContext.resume().then(function() {
-    // Create a new audio source for the passed stream, and connect it to the analyser.
-    const audioSource = audioContext.createMediaStreamSource(mediaStream);
-    audioSource.connect(analyser);
-     // Start the render loop
-    renderFrame();
-  });
+  let audioSource: AudioNode|null = null;
+
+  // disconnects previous (if any media source)
+  // and connects new media source to analyser node.
+  const connectMediaStream = (mediaSourceStream: MediaStream) => {
+    audioContext.resume().then(function() {
+      if (audioSource) {
+        audioSource.disconnect();
+      }
+      // Create a new audio source for the passed stream, and connect it to the analyser.
+      audioSource = audioContext.createMediaStreamSource(mediaSourceStream);
+      audioSource.connect(analyser);
+       // Start the render loop
+      renderFrame();
+    });
+  }
+  connectMediaStream(mediaStream);
 
   return {
+    reconnect: (newMediaStream: MediaStream) => connectMediaStream(newMediaStream),
     element: canvas,
     stop: (): void => {
       stopped = true;

@@ -31,19 +31,15 @@ sheet.attach();
 type functionReturningString = () => string;
 type stringOrFn = string|functionReturningString;
 
+function capitalize(word: string) {
+  return word[0].toUpperCase() + word.slice(1);
+}
+
 
 function getClass(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack) {
-  if (track instanceof LocalAudioTrack) {
-    return 'LocalAudioTrack'
-  } else if (track instanceof LocalVideoTrack) {
-    return 'LocalVideoTrack'
-  } else if (track.kind === 'audio') {
-    return 'RemoteAudioTrack';
-  } else if (track.kind === 'video') {
-    return 'RemoteVideoTrack';
-  } else {
-    return 'unknown';
-  }
+  const local = 'disable' in track ? 'Local' : 'Remote';
+  const video = track.kind || 'unknown';
+  return local + capitalize(video);
 }
 
 export function createTrackStats(track: LocalAudioTrack | LocalVideoTrack | RemoteAudioTrack | RemoteVideoTrack, container: HTMLElement) {

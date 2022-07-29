@@ -37,6 +37,12 @@ export function attachAudioTrack(track: AudioTrack, container: HTMLElement) {
   const canvasContainer = createDiv(container, 'canvasContainer');
   canvasContainer.appendChild(wave.element);
 
+  // tracks can restart.
+  track.on('started', () => {
+    console.log('handling track started: ', track.mediaStreamTrack.id);
+    wave.reconnect(new MediaStream([track.mediaStreamTrack]));
+  });
+
   return {
     mediaElement: audioElement,
     stop: (): void => { wave.stop() }

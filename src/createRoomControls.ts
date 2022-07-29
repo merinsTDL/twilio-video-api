@@ -242,7 +242,7 @@ export function createRoomControls(
   // for working with dev env use:
   // const defaultOptions = { wsServer: "wss://us2.vss.dev.twilio.com/signaling" };
   // for simulcast use:
-  // { preferredVideoCodecs: [ { codec: "VP8", "simulcast": true }] }
+  // { "preferredVideoCodecs": [ { "codec": "VP8", "simulcast": true }] }
   // const defaultOptions = { networkQuality: { local: 3, remote: 0 } };
   // const defaultOptions = {
   //   "preferredVideoCodecs": [{"codec":"H264"}],
@@ -408,7 +408,7 @@ export function createRoomControls(
   });
 
   const controlsAndDefaults = [
-    {control: roomNameInput, urlParamName: 'room', inputType: 'editBox', defaultValue: randomRoomName()},
+    {control: roomNameInput, urlParamName: 'room', inputType: 'editBox', alwaysIncludeInUrl: true, defaultValue: randomRoomName()},
     {control: identityInput, urlParamName: 'identity', inputType: 'editBox', defaultValue: randomParticipantName()},
     {control: tokenServerUrlInput, urlParamName: 'server', inputType: 'editBox', defaultValue: 'http://localhost:3002'},
     {control: extraConnectOptionsControl, urlParamName: 'extraConnectOptions', inputType: 'editBox', defaultValue: JSON.stringify(defaultExtraConnectOptions, null, 2)},
@@ -443,14 +443,14 @@ export function createRoomControls(
 
   const clipboardBtn = createButton('copy link to clipboard', container, () => {
     const url = new URL(window.location.origin + window.location.pathname);
-    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue }) => {
+    controlsAndDefaults.forEach(({ control, urlParamName, inputType, defaultValue, alwaysIncludeInUrl = false }) => {
       if ('value' in control) {
-        if (inputType === 'checkBox' && typeof defaultValue === 'boolean' && control.checked !== defaultValue) {
+        if (inputType === 'checkBox' && typeof defaultValue === 'boolean' && (alwaysIncludeInUrl || control.checked !== defaultValue)) {
             url.searchParams.append(urlParamName, control.checked ? 'true' : 'false');
-        } else if (inputType === 'editBox' && typeof defaultValue === 'string' && defaultValue != control.value) {
+        } else if (inputType === 'editBox' && typeof defaultValue === 'string' && (alwaysIncludeInUrl || defaultValue != control.value)) {
           url.searchParams.append(urlParamName, control.value);
         }
-      } else if ('setValue' in control && typeof defaultValue === 'string' && control.getValue() !== defaultValue ) {
+      } else if ('setValue' in control && typeof defaultValue === 'string' && (alwaysIncludeInUrl || control.getValue() !== defaultValue) ) {
         url.searchParams.append(urlParamName, control.getValue());
       }
     });

@@ -4,10 +4,9 @@
 /* eslint-disable quotes */
 'use strict';
 
-import { Room, Logger, LocalTrack, TwilioError} from 'twilio-video';
+import { Room, Logger, LocalTrack} from 'twilio-video';
 import { createLog, log } from './components/log';
-import { createCollapsibleDiv, createFieldSet } from './components/createCollapsibleDiv';
-import { createDiv } from './components/createDiv';
+import { createFieldSet } from './components/createCollapsibleDiv';
 import { createLocalTracksControls } from './createLocalTracksControls';
 import { createRoomControls } from './createRoomControls';
 import { renderRoom } from './renderRoom';
@@ -67,8 +66,13 @@ export function demo(Video: typeof import('twilio-video'), containerDiv: HTMLEle
 
   // @ts-ignore
   window._TwilioVideo = { Video, rooms };
+
   // @ts-ignore
   window.rooms = rooms;
+
+  // @ts-ignore
+  window.localTracks = localTracks;
+
   const  roomControl = createRoomControls(
     container,
     Video,
