@@ -1,17 +1,20 @@
 // import * as Video from 'twilio-video';
 import Video from 'twilio-video';
-
-// @ts-ignore
-// import Video from 'twilio-video/dist/bundle.js' ;
 import { demo } from './demo';
 
-// @ts-ignore
-console.log('accessing Twilio: ', Twilio);
-// @ts-ignore
-const cdn = Twilio.Video;
+
 const npm = Video;
-console.log({ cdn,  npm });
-console.log('Using NPM');
+try {
+  // @ts-ignore
+  console.log('accessing CDN Twilio: ', Twilio);
+  // @ts-ignore
+  const cdn = Twilio.Video;
+  console.log({ cdn,  npm });
+} catch (error) {
+  console.warn('Failed to load CDN version: ', error);
+}
+
+// use npm version of twilio-video.
 demo(npm, document.body);
 
 
