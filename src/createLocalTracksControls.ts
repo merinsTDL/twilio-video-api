@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import { createButton, IButton } from './components/button';
 import { createDiv } from './components/createDiv';
+import { audioBuffer } from './components/audioBuffer';
 import { syntheticAudio } from './components/syntheticaudio';
-import { syntheticVideo }  from './components/syntheticvideo';
+import { syntheticVideo } from './components/syntheticvideo';
 import { log } from './components/log';
 import { getBooleanUrlParam } from './components/getBooleanUrlParam';
 import { getDeviceSelectionOptions } from './getDeviceSelectionOptions';
@@ -46,7 +47,7 @@ const style = {
 const sheet = jss.createStyleSheet(style)
 sheet.attach();
 
-export function createLocalTracksControls({ roomControl, container, rooms, Video, localTracks } : {
+export function createLocalTracksControls({ roomControl, container, rooms, Video, localTracks }: {
   roomControl: IRoomControl
   container: HTMLElement, // parent for tracks.
   rooms: Room[],
@@ -61,7 +62,7 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
   const localTracksContainer = createDiv(container, sheet.classes.trackRenders);
 
   const renderedTracks = new Map<LocalTrack, IRenderedLocalTrack>();
-  function manageLocalTrack({ localTrack, trackName = 'Local Track', videoDevices = []} : {
+  function manageLocalTrack({ localTrack, trackName = 'Local Track', videoDevices = [] }: {
     trackName?: string,
     localTrack: LocalAudioTrack | LocalVideoTrack,
     videoDevices?: MediaDeviceInfo[]
@@ -87,26 +88,26 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
     }));
   }
 
-  function renderStandAloneMediaStreamTrack({ msTrack, autoAttach = true } : { msTrack: MediaStreamTrack, autoAttach: boolean }) {
+  function renderStandAloneMediaStreamTrack({ msTrack, autoAttach = true }: { msTrack: MediaStreamTrack, autoAttach: boolean }) {
     const localTrack = msTrack.kind === 'video' ?
       new Video.LocalVideoTrack(msTrack, { logLevel: 'warn', name: 'my-video' }) :
       new Video.LocalAudioTrack(msTrack, { logLevel: 'warn', name: 'my-audio' });
     renderLocalTrack({ container: localTracksContainer, rooms: [], track: localTrack, videoDevices: [], autoAttach, autoPublish: false, onClosed: () => { } });
   }
 
-  function getLocalTrackOptions(defaultName: string) : CreateLocalTrackOptions {
+  function getLocalTrackOptions(defaultName: string): CreateLocalTrackOptions {
     const trackConstraints = roomControl.getTrackConstraints();
-    const  trackOptions = trackConstraints === '' ? { logLevel: 'warn', name: defaultName } : JSON.parse(trackConstraints);
+    const trackOptions = trackConstraints === '' ? { logLevel: 'warn', name: defaultName } : JSON.parse(trackConstraints);
     log('Track Options:', JSON.stringify(trackOptions));
     return trackOptions
   }
 
   const trackSelectionDiv = createDiv(localTrackButtonsContainer, sheet.classes.roomControlsRow);
 
-  type LocalTrackType = 'Local Video' | 'Local Audio' | 'Krisp Audio' | 'Rnnoise Audio' | 'Synthetic Video' | 'Synthetic Audio' | 'Screen Share';
+  type LocalTrackType = 'Local Video' | 'Local Audio' | 'Krisp Audio' | 'Rnnoise Audio' | 'Synthetic Video' | 'Synthetic Audio' | 'Screen Share' | 'File Audio';
   const trackChoice = createSelection({
     container: trackSelectionDiv,
-    options: ['Krisp Audio', 'Rnnoise Audio', 'Local Video', 'Local Audio', 'Synthetic Video', 'Synthetic Audio', 'Screen Share'],
+    options: ['Krisp Audio', 'Rnnoise Audio', 'Local Video', 'Local Audio', 'Synthetic Video', 'Synthetic Audio', 'Screen Share', 'File Audio'],
     title: '',
     labelClasses: [],
     selectClasses: [sheet.classes.trackChoiceSelection],
@@ -119,49 +120,55 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
     const thisTrackName = trackType + '-' + number++;
     try {
       const trackOptions = getLocalTrackOptions(thisTrackName);
-      let localTrack: LocalAudioTrack|LocalVideoTrack;
-      switch(trackType) {
+      let localTrack: LocalAudioTrack | LocalVideoTrack;
+      switch (trackType) {
         case 'Local Audio':
-        localTrack = await Video.createLocalAudioTrack(trackOptions);
-        break;
+          localTrack = await Video.createLocalAudioTrack(trackOptions);
+          break;
 
         case 'Local Video':
-        localTrack = await Video.createLocalVideoTrack(trackOptions);
-        break;
+          localTrack = await Video.createLocalVideoTrack(trackOptions);
+          break;
 
         case 'Synthetic Video':
-        localTrack = new Video.LocalVideoTrack(syntheticVideo({ width: 640, height: 360, word: thisTrackName }), { logLevel: 'warn', name: thisTrackName });
-        break;
+          localTrack = new Video.LocalVideoTrack(syntheticVideo({ width: 640, height: 360, word: thisTrackName }), { logLevel: 'warn', name: thisTrackName });
+          break;
 
         case 'Synthetic Audio':
-        localTrack = new Video.LocalAudioTrack(syntheticAudio(), { logLevel: 'warn', name: thisTrackName });
-        break;
+          localTrack = new Video.LocalAudioTrack(syntheticAudio(), { logLevel: 'warn', name: thisTrackName });
+          break;
+
+        case 'File Audio':
+          localTrack = new Video.LocalAudioTrack(audioBuffer(), { logLevel: 'warn', name: thisTrackName });
+          break;
 
         case 'Krisp Audio':
-        localTrack = await Video.createLocalAudioTrack({
-          logLevel: 'warn',
-          name: thisTrackName,
-          noiseCancellationOptions: {
-            vendor: 'krisp',
-            sdkAssetsPath: '/krisp-audio-plugin/dist'
-        }});
-        break;
+          localTrack = await Video.createLocalAudioTrack({
+            logLevel: 'warn',
+            name: thisTrackName,
+            noiseCancellationOptions: {
+              vendor: 'krisp',
+              sdkAssetsPath: '/krisp-audio-plugin/dist'
+            }
+          });
+          break;
 
         case 'Rnnoise Audio':
-        localTrack = await Video.createLocalAudioTrack({
-          logLevel: 'warn',
-          name: thisTrackName,
-          noiseCancellationOptions: {
-            vendor: 'rnnoise',
-            sdkAssetsPath: '/rnnoise'
-        }});
-        break;
+          localTrack = await Video.createLocalAudioTrack({
+            logLevel: 'warn',
+            name: thisTrackName,
+            noiseCancellationOptions: {
+              vendor: 'rnnoise',
+              sdkAssetsPath: '/rnnoise'
+            }
+          });
+          break;
 
         case 'Screen Share':
-        // @ts-ignore
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: trackOptions });
-        localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
-        break;
+          // @ts-ignore
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: trackOptions });
+          localTrack = new Video.LocalVideoTrack(screenStream.getTracks()[0], { logLevel: 'warn', name: thisTrackName });
+          break;
 
         default:
           throw new Error('invalid selection: ' + trackType);
@@ -184,7 +191,7 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
       console.log({ deviceId, label });
       log({ deviceId, label });
       console.log({ deviceId, label });
-    createButton(device.label, localTrackButtonsContainer, async () => {
+      createButton(device.label, localTrackButtonsContainer, async () => {
         const videoConstraints = {
           deviceId: { exact: device.deviceId },
           // height: 480, width: 640, frameRate: 24
@@ -205,7 +212,7 @@ export function createLocalTracksControls({ roomControl, container, rooms, Video
   }
 
   return {
-    roomAdded: (room: Room)  => {
+    roomAdded: (room: Room) => {
       renderedTracks.forEach((renderedTrack => renderedTrack.roomAdded(room)));
     },
     roomRemoved: (room: Room) => {
